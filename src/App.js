@@ -1,24 +1,74 @@
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import "./style.css";
+
+import { useAppContext } from "./context/AppContext";
+import Booking from "./pages/Booking";
+import Cart from "./pages/Cart";
+import Deposit from "./pages/Deposit";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Orders from "./pages/Orders";
+import Product from "./pages/Product";
+import Profile from "./pages/Profile";
+import Register from "./pages/Register";
+
+function RequireAuth({ children }) {
+  const { isAuthenticated } = useAppContext();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/product" element={<Product />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth>
+              <Profile />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/booking"
+          element={
+            <RequireAuth>
+              <Booking />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/payment"
+          element={
+            <RequireAuth>
+              <Deposit />
+            </RequireAuth>
+          }
+        />
+        <Route path="/deposit" element={<Navigate to="/payment" replace />} />
+        <Route
+          path="/orders"
+          element={
+            <RequireAuth>
+              <Orders />
+            </RequireAuth>
+          }
+        />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
