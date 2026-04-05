@@ -1,8 +1,8 @@
-export const products = [
+export const initialProducts = [
   {
     id: "P001",
     name: "Trizzy Dress",
-    category: "Vay",
+    category: "Váy",
     pricePerDay: 60000,
     sizeOptions: ["S", "M", "L"],
     defaultSize: "M",
@@ -10,8 +10,7 @@ export const products = [
     rented: 1,
     image:
       "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=800&q=80",
-    description:
-      "Vay linen dang suong, hop di tiec nhe va su kien cuoi tuan.",
+    description: "Váy linen dáng suông, hợp đi tiệc nhẹ và sự kiện cuối tuần.",
     blockedDates: [
       { start: "2026-04-10", end: "2026-04-12" },
       { start: "2026-04-20", end: "2026-04-22" }
@@ -20,7 +19,7 @@ export const products = [
   {
     id: "P002",
     name: "Classic Blazer",
-    category: "Ao Khoac",
+    category: "Áo khoác",
     pricePerDay: 85000,
     sizeOptions: ["M", "L", "XL"],
     defaultSize: "L",
@@ -29,7 +28,7 @@ export const products = [
     image:
       "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
     description:
-      "Blazer phom dang dung, chat lieu mem nhe, de phoi nhieu phong cach.",
+      "Blazer phom dáng đứng, chất liệu mềm nhẹ, dễ phối nhiều phong cách.",
     blockedDates: [{ start: "2026-04-06", end: "2026-04-08" }]
   },
   {
@@ -44,7 +43,7 @@ export const products = [
     image:
       "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=800&q=80",
     description:
-      "Jumpsuit mau trung tinh, ton dang va phu hop chup anh ngoai canh.",
+      "Jumpsuit màu trung tính, tôn dáng và phù hợp chụp ảnh ngoại cảnh.",
     blockedDates: []
   },
   {
@@ -59,7 +58,7 @@ export const products = [
     image:
       "https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?auto=format&fit=crop&w=800&q=80",
     description:
-      "Bo suit cao cap danh cho su kien trang trong, tong mau trang kem.",
+      "Bộ suit cao cấp dành cho sự kiện trang trọng, tông màu trắng kem.",
     blockedDates: [
       { start: "2026-04-04", end: "2026-04-15" },
       { start: "2026-04-25", end: "2026-04-27" }
@@ -68,7 +67,7 @@ export const products = [
   {
     id: "P005",
     name: "Soft Knit Cardigan",
-    category: "Ao",
+    category: "Áo",
     pricePerDay: 50000,
     sizeOptions: ["S", "M", "L"],
     defaultSize: "S",
@@ -76,14 +75,13 @@ export const products = [
     rented: 2,
     image:
       "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80",
-    description:
-      "Cardigan mem nhe, hop layering cho phong cach thu dong.",
+    description: "Cardigan mềm nhẹ, hợp layering cho phong cách thu đông.",
     blockedDates: [{ start: "2026-04-18", end: "2026-04-19" }]
   },
   {
     id: "P006",
     name: "Evening Satin Dress",
-    category: "Dam",
+    category: "Đầm",
     pricePerDay: 120000,
     sizeOptions: ["S", "M"],
     defaultSize: "S",
@@ -91,8 +89,7 @@ export const products = [
     rented: 0,
     image:
       "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=800&q=80",
-    description:
-      "Dam satin sang trong, phu hop tiec toi va chup lookbook.",
+    description: "Đầm satin sang trọng, phù hợp tiệc tối và chụp lookbook.",
     blockedDates: [{ start: "2026-04-14", end: "2026-04-16" }]
   }
 ];
@@ -125,8 +122,8 @@ export const isDateRangeAvailable = (product, startDate, endDate) => {
   });
 };
 
-export const getProductById = (productId) =>
-  products.find((product) => product.id === productId);
+export const getProductById = (productList, productId) =>
+  productList.find((product) => product.id === productId);
 
 export const getRealtimeStatus = (product) => {
   if (!product) {

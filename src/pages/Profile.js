@@ -7,6 +7,7 @@ const API_BASE = "http://localhost:5000";
 
 export default function Profile() {
   const { token, user, setUser } = useAppContext();
+  const role = user?.role || "customer";
 
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.phone || "");
@@ -38,7 +39,7 @@ export default function Profile() {
         if (isMounted) {
           setErrorMessage(
             error.response?.data?.message ||
-              "Khong tai duoc thong tin profile."
+              "Không tải được thông tin hồ sơ."
           );
         }
       } finally {
@@ -72,11 +73,11 @@ export default function Profile() {
       );
 
       setUser(response.data.user);
-      setStatusMessage("Cap nhat profile thanh cong.");
+      setStatusMessage("Cập nhật hồ sơ thành công.");
     } catch (error) {
       setErrorMessage(
         error.response?.data?.message ||
-          "Khong cap nhat duoc profile. Vui long thu lai."
+          "Không cập nhật được hồ sơ. Vui lòng thử lại."
       );
     } finally {
       setSaving(false);
@@ -86,16 +87,16 @@ export default function Profile() {
   return (
     <MainLayout>
       <section className="section-heading section-heading-left">
-        <h2>Profile ca nhan</h2>
-        <p>Cap nhat so dien thoai va dia chi de giao nhan nhanh hon.</p>
+        <h2>Hồ sơ cá nhân</h2>
+        <p>Cập nhật số điện thoại và địa chỉ để giao nhận nhanh hơn.</p>
       </section>
 
       <form className="card profile-form" onSubmit={handleSubmit}>
-        {loading ? <p>Dang tai thong tin...</p> : null}
+        {loading ? <p>Đang tải thông tin...</p> : null}
 
         <div>
           <label htmlFor="profile-email" className="label-text">
-            Email dang ky
+            Email đăng ký
           </label>
           <input
             id="profile-email"
@@ -108,8 +109,21 @@ export default function Profile() {
         </div>
 
         <div>
+          <label htmlFor="profile-role" className="label-text">
+            Vai trò tài khoản
+          </label>
+          <input
+            id="profile-role"
+            type="text"
+            className="input"
+            value={role === "admin" ? "Quản trị viên" : "Khách hàng"}
+            disabled
+          />
+        </div>
+
+        <div>
           <label htmlFor="profile-phone" className="label-text">
-            So dien thoai
+            Số điện thoại
           </label>
           <input
             id="profile-phone"
@@ -117,20 +131,20 @@ export default function Profile() {
             className="input"
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
-            placeholder="Nhap so dien thoai"
+            placeholder="Nhập số điện thoại"
           />
         </div>
 
         <div>
           <label htmlFor="profile-address" className="label-text">
-            Dia chi nhan do
+            Địa chỉ nhận đồ
           </label>
           <textarea
             id="profile-address"
             className="input textarea"
             value={address}
             onChange={(event) => setAddress(event.target.value)}
-            placeholder="So nha, duong, quan/huyen, tinh/thanh"
+            placeholder="Số nhà, đường, quận/huyện, tỉnh/thành"
           />
         </div>
 
@@ -138,7 +152,7 @@ export default function Profile() {
         {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
         <button type="submit" className="btn-primary" disabled={saving}>
-          {saving ? "Dang luu..." : "Luu thay doi"}
+          {saving ? "Đang lưu..." : "Lưu thay đổi"}
         </button>
       </form>
     </MainLayout>

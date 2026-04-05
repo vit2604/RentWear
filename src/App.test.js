@@ -9,5 +9,5 @@ test("renders hero title", () => {
     </AppProvider>
   );
 
-  expect(screen.getByText(/elegance for rent/i)).toBeInTheDocument();
+  expect(screen.getByText(/tinh hoa thời trang cho thuê/i)).toBeInTheDocument();
 });

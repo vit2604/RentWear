@@ -19,7 +19,7 @@ export default function Login() {
     event.preventDefault();
 
     if (!email || !password) {
-      setErrorMessage("Vui long nhap day du email va mat khau.");
+      setErrorMessage("Vui lòng nhập đầy đủ email và mật khẩu.");
       return;
     }
 
@@ -33,7 +33,7 @@ export default function Login() {
       });
 
       if (!response.data?.token) {
-        setErrorMessage(response.data?.message || "Dang nhap that bai.");
+        setErrorMessage(response.data?.message || "Đăng nhập thất bại.");
         return;
       }
 
@@ -42,11 +42,11 @@ export default function Login() {
         user: response.data.user || { email }
       });
 
-      navigate("/profile");
+      navigate("/");
     } catch (error) {
       setErrorMessage(
         error.response?.data?.message ||
-          "Khong ket noi duoc server. Kiem tra backend va thu lai."
+          "Không kết nối được server. Kiểm tra backend và thử lại."
       );
     } finally {
       setSubmitting(false);
@@ -57,8 +57,8 @@ export default function Login() {
     <MainLayout>
       <section className="auth-page">
         <form className="card auth-card" onSubmit={handleSubmit}>
-          <h2>Chao mung tro lai</h2>
-          <p>Dang nhap de quan ly profile va tiep tuc quy trinh dat thue.</p>
+          <h2>Chào mừng trở lại</h2>
+          <p>Đăng nhập để tiếp tục thuê đồ và quản lý tài khoản.</p>
 
           <label htmlFor="login-email" className="label-text">
             Email
@@ -73,7 +73,7 @@ export default function Login() {
           />
 
           <label htmlFor="login-password" className="label-text">
-            Mat khau
+            Mật khẩu
           </label>
           <input
             id="login-password"
@@ -81,17 +81,20 @@ export default function Login() {
             className="input"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="Nhap mat khau"
+            placeholder="Nhập mật khẩu"
           />
 
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
           <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? "Dang xu ly..." : "Dang nhap"}
+            {submitting ? "Đang xử lý..." : "Đăng nhập"}
           </button>
 
           <p className="auth-note">
-            Chua co tai khoan? <Link to="/register">Dang ky ngay</Link>
+            Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+          </p>
+          <p className="auth-note">
+            Demo admin: đăng nhập bằng <strong>admin@rentwear.com</strong>.
           </p>
         </form>
       </section>

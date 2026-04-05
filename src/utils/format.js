@@ -1,5 +1,5 @@
 export const formatCurrency = (value) =>
-  `${new Intl.NumberFormat("vi-VN").format(value)}d`;
+  `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
 
 export const formatDate = (value) => {
   if (!value) {

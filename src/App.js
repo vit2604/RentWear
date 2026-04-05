@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./style.css";
 
 import { useAppContext } from "./context/AppContext";
+import AdminDashboard from "./pages/AdminDashboard";
 import Booking from "./pages/Booking";
 import Cart from "./pages/Cart";
 import Deposit from "./pages/Deposit";
@@ -22,11 +23,33 @@ function RequireAuth({ children }) {
   return children;
 }
 
+function RequireAdmin({ children }) {
+  const { isAuthenticated, isAdmin } = useAppContext();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <AdminDashboard />
+            </RequireAdmin>
+          }
+        />
         <Route path="/product" element={<Product />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />

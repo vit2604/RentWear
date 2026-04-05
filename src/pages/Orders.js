@@ -4,9 +4,9 @@ import { useAppContext } from "../context/AppContext";
 import { formatCurrency, formatDate } from "../utils/format";
 
 const paymentLabel = {
-  bank: "Chuyen khoan ngan hang",
-  wallet: "Vi dien tu",
-  cod: "Tien mat khi nhan"
+  bank: "Chuyển khoản ngân hàng",
+  wallet: "Ví điện tử",
+  cod: "Tiền mặt khi nhận"
 };
 
 export default function Orders() {
@@ -19,9 +19,9 @@ export default function Orders() {
     return (
       <MainLayout>
         <div className="card empty-state">
-          <p>Ban chua co don thue nao.</p>
+          <p>Bạn chưa có đơn thuê nào.</p>
           <Link to="/product" className="btn-primary inline-btn">
-            Bat dau thue do
+            Bắt đầu thuê đồ
           </Link>
         </div>
       </MainLayout>
@@ -31,8 +31,8 @@ export default function Orders() {
   return (
     <MainLayout>
       <section className="section-heading section-heading-left">
-        <h2>Xac nhan don hang</h2>
-        <p>He thong da ghi nhan thanh toan va dang chuan bi trang phuc cho ban.</p>
+        <h2>Xác nhận đơn hàng</h2>
+        <p>Hệ thống đã ghi nhận thanh toán và đang chuẩn bị trang phục cho bạn.</p>
       </section>
 
       <div className="stack">
@@ -45,19 +45,19 @@ export default function Orders() {
           >
             <div className="order-head">
               <div>
-                <h3>Ma don: {order.id}</h3>
-                <p className="meta-text">Tao luc {formatDate(order.createdAt)}</p>
+                <h3>Mã đơn: {order.id}</h3>
+                <p className="meta-text">Tạo lúc {formatDate(order.createdAt)}</p>
               </div>
-              <span className="status-chip available">Da xac nhan</span>
+              <span className="status-chip available">Đã xác nhận</span>
             </div>
 
             <div className="order-grid">
               <div>
                 <p className="meta-text">
-                  Thoi gian thue: {order.startDate} den {order.endDate}
+                  Thời gian thuê: {order.startDate} đến {order.endDate}
                 </p>
                 <p className="meta-text">
-                  Phuong thuc: {paymentLabel[order.paymentMethod] || order.paymentMethod}
+                  Phương thức: {paymentLabel[order.paymentMethod] || order.paymentMethod}
                 </p>
               </div>
               <strong>{formatCurrency(order.total)}</strong>
@@ -67,7 +67,7 @@ export default function Orders() {
               {order.items.map((item) => (
                 <div className="order-item" key={`${order.id}-${item.productId}-${item.size}`}>
                   <span>
-                    {item.name} - Size {item.size} x{item.quantity}
+                    {item.name} - Cỡ {item.size} x{item.quantity}
                   </span>
                   <span>{formatCurrency(item.pricePerDay * item.quantity)}</span>
                 </div>

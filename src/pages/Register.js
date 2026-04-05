@@ -18,12 +18,12 @@ export default function Register() {
     event.preventDefault();
 
     if (!email || !password || !confirmPassword) {
-      setErrorMessage("Vui long nhap day du thong tin.");
+      setErrorMessage("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMessage("Mat khau xac nhan khong trung khop.");
+      setErrorMessage("Mật khẩu xác nhận không trùng khớp.");
       return;
     }
 
@@ -35,7 +35,7 @@ export default function Register() {
       navigate("/login");
     } catch (error) {
       setErrorMessage(
-        error.response?.data?.message || "Dang ky that bai. Vui long thu lai."
+        error.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại."
       );
     } finally {
       setSubmitting(false);
@@ -46,8 +46,8 @@ export default function Register() {
     <MainLayout>
       <section className="auth-page">
         <form className="card auth-card" onSubmit={handleSubmit}>
-          <h2>Tao tai khoan moi</h2>
-          <p>Tao tai khoan de luu dia chi giao nhan va lich su don thue.</p>
+          <h2>Tạo tài khoản mới</h2>
+          <p>Tạo tài khoản để lưu địa chỉ giao nhận và lịch sử đơn thuê.</p>
 
           <label htmlFor="register-email" className="label-text">
             Email
@@ -62,7 +62,7 @@ export default function Register() {
           />
 
           <label htmlFor="register-password" className="label-text">
-            Mat khau
+            Mật khẩu
           </label>
           <input
             id="register-password"
@@ -70,11 +70,11 @@ export default function Register() {
             className="input"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="Nhap mat khau"
+            placeholder="Nhập mật khẩu"
           />
 
           <label htmlFor="register-confirm" className="label-text">
-            Xac nhan mat khau
+            Xác nhận mật khẩu
           </label>
           <input
             id="register-confirm"
@@ -82,17 +82,17 @@ export default function Register() {
             className="input"
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
-            placeholder="Nhap lai mat khau"
+            placeholder="Nhập lại mật khẩu"
           />
 
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
           <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? "Dang xu ly..." : "Dang ky"}
+            {submitting ? "Đang xử lý..." : "Đăng ký"}
           </button>
 
           <p className="auth-note">
-            Da co tai khoan? <Link to="/login">Dang nhap</Link>
+            Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
           </p>
         </form>
       </section>

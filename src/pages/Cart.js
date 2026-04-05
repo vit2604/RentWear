@@ -9,6 +9,7 @@ export default function Cart() {
   const navigate = useNavigate();
   const {
     cart,
+    products,
     getItemKey,
     removeCartItem,
     setCheckoutItems,
@@ -59,7 +60,7 @@ export default function Cart() {
 
   const handleCheckout = () => {
     if (!selectedItems.length) {
-      setErrorMessage("Ban can chon it nhat 1 san pham de tiep tuc booking.");
+      setErrorMessage("Bạn cần chọn ít nhất 1 sản phẩm để tiếp tục đặt lịch.");
       return;
     }
 
@@ -71,15 +72,15 @@ export default function Cart() {
   return (
     <MainLayout>
       <section className="section-heading section-heading-left">
-        <h2>Gio hang</h2>
-        <p>Chinh sua so luong hoac xoa bot san pham truoc khi dat lich thue.</p>
+        <h2>Giỏ hàng</h2>
+        <p>Chỉnh sửa số lượng hoặc xóa bớt sản phẩm trước khi đặt lịch thuê.</p>
       </section>
 
       {cart.length === 0 ? (
         <div className="card empty-state">
-          <p>Gio hang dang trong.</p>
+          <p>Giỏ hàng đang trống.</p>
           <Link to="/product" className="btn-primary inline-btn">
-            Kham pha san pham
+            Khám phá sản phẩm
           </Link>
         </div>
       ) : (
@@ -87,7 +88,7 @@ export default function Cart() {
           <section className="stack">
             {cart.map((item) => {
               const key = getItemKey(item);
-              const product = getProductById(item.productId);
+              const product = getProductById(products, item.productId);
               const status = getRealtimeStatus(product);
 
               return (
@@ -105,11 +106,11 @@ export default function Cart() {
                     <div className="cart-item-head">
                       <h3>{item.name}</h3>
                       <span className={`status-chip ${status}`}>
-                        {status === "available" ? "San hang" : "Tam het"}
+                        {status === "available" ? "Sẵn hàng" : "Tạm hết"}
                       </span>
                     </div>
                     <p className="meta-text">
-                      Size {item.size} | Don gia {formatCurrency(item.pricePerDay)} / ngay
+                      Cỡ {item.size} | Đơn giá {formatCurrency(item.pricePerDay)} / ngày
                     </p>
                   </div>
 
@@ -147,7 +148,7 @@ export default function Cart() {
                       className="btn-link danger"
                       onClick={() => removeCartItem(item.productId, item.size)}
                     >
-                      Xoa
+                      Xóa
                     </button>
                   </div>
                 </article>
@@ -155,33 +156,33 @@ export default function Cart() {
             })}
 
             <Link to="/product" className="continue-link">
-              + Tiep tuc mua sam
+              + Tiếp tục mua sắm
             </Link>
           </section>
 
           <aside className="card summary-card">
-            <h3>Tam tinh ({selectedItems.length} san pham)</h3>
+            <h3>Tạm tính ({selectedItems.length} sản phẩm)</h3>
             <div className="summary-row">
-              <span>Phi giao hang</span>
-              <span>{shippingFee === 0 ? "Mien phi" : formatCurrency(shippingFee)}</span>
+              <span>Phí giao hàng</span>
+              <span>{shippingFee === 0 ? "Miễn phí" : formatCurrency(shippingFee)}</span>
             </div>
             <div className="summary-row">
-              <span>Giam gia</span>
+              <span>Giảm giá</span>
               <span>-{formatCurrency(discount)}</span>
             </div>
             <div className="summary-row">
-              <span>Tam tinh tien hang</span>
+              <span>Tạm tính tiền hàng</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
             <div className="summary-total">
-              <span>Tong tien</span>
+              <span>Tổng tiền</span>
               <strong>{formatCurrency(total)}</strong>
             </div>
 
             {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
             <button type="button" className="btn-primary" onClick={handleCheckout}>
-              DAT NGAY
+              ĐẶT NGAY
             </button>
           </aside>
         </div>
