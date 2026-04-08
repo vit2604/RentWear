@@ -6,12 +6,24 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 const PORT = 5000;
-const MONGO_URI = "mongodb://127.0.0.1:27017/rentclothes";
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/rentclothes";
 const JWT_SECRET = "RENTWEAR_SECRET_KEY";
 const ADMIN_EMAILS = new Set(["admin@rentwear.com", "admin@rentwear.local"]);
 
 app.use(express.json());
 app.use(cors());
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+
+  res.on("finish", () => {
+    const duration = Date.now() - startedAt;
+    console.log(`[HTTP] ${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
+  });
+
+  next();
+});
+
+mongoose.set("bufferCommands", false);
 
 mongoose
   .connect(MONGO_URI)
@@ -21,6 +33,19 @@ mongoose
   .catch((error) => {
     console.error("MongoDB connection error:", error.message);
   });
+
+const isDatabaseConnected = () => mongoose.connection.readyState === 1;
+
+const requireDatabase = (req, res, next) => {
+  if (!isDatabaseConnected()) {
+    return res.status(503).json({
+      message:
+        "Backend đã chạy nhưng chưa kết nối MongoDB. Vui lòng bật MongoDB hoặc kiểm tra MONGO_URI."
+    });
+  }
+
+  return next();
+};
 
 const userSchema = new mongoose.Schema(
   {
@@ -76,7 +101,7 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-app.post("/register", async (req, res) => {
+app.post("/register", requireDatabase, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -101,11 +126,12 @@ app.post("/register", async (req, res) => {
 
     return res.json({ message: "Đăng ký thành công." });
   } catch (error) {
+    console.error("[REGISTER_ERROR]", error);
     return res.status(500).json({ message: "Đăng ký thất bại." });
   }
 });
 
-app.post("/login", async (req, res) => {
+app.post("/login", requireDatabase, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -144,11 +170,12 @@ app.post("/login", async (req, res) => {
       }
     });
   } catch (error) {
+    console.error("[LOGIN_ERROR]", error);
     return res.status(500).json({ message: "Đăng nhập thất bại." });
   }
 });
 
-app.get("/profile", authMiddleware, async (req, res) => {
+app.get("/profile", requireDatabase, authMiddleware, async (req, res) => {
   return res.json({
     id: req.user._id,
     email: req.user.email,
@@ -158,7 +185,7 @@ app.get("/profile", authMiddleware, async (req, res) => {
   });
 });
 
-app.put("/profile", authMiddleware, async (req, res) => {
+app.put("/profile", requireDatabase, authMiddleware, async (req, res) => {
   try {
     const { phone = "", address = "" } = req.body;
 
@@ -177,6 +204,7 @@ app.put("/profile", authMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
+    console.error("[PROFILE_UPDATE_ERROR]", error);
     return res.status(500).json({ message: "Cập nhật hồ sơ thất bại." });
   }
 });
