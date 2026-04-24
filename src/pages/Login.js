@@ -3,8 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import MainLayout from "../components/MainLayout";
 import { useAppContext } from "../context/AppContext";
-
-const API_BASE = "http://localhost:5000";
+import { apiUrl } from "../config/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -27,7 +26,7 @@ export default function Login() {
     setErrorMessage("");
 
     try {
-      const response = await axios.post(`${API_BASE}/login`, {
+      const response = await axios.post(apiUrl("/login"), {
         email,
         password
       });

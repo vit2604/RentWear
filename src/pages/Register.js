@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import MainLayout from "../components/MainLayout";
-
-const API_BASE = "http://localhost:5000";
+import { apiUrl } from "../config/api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -31,7 +30,7 @@ export default function Register() {
     setErrorMessage("");
 
     try {
-      await axios.post(`${API_BASE}/register`, { email, password });
+      await axios.post(apiUrl("/register"), { email, password });
       navigate("/login");
     } catch (error) {
       setErrorMessage(

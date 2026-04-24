@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "../components/MainLayout";
 import { useAppContext } from "../context/AppContext";
+import { apiUrl } from "../config/api";
 import { formatCurrency } from "../utils/format";
 
 const paymentMethods = [
@@ -48,7 +49,7 @@ export default function Deposit() {
         setLoadingPayOS(true);
         setPayOSData(null);
 
-        const response = await fetch("http://127.0.0.1:5000/payments/payos/create", {
+        const response = await fetch(apiUrl("/payments/payos/create"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -69,7 +70,7 @@ export default function Deposit() {
         setPayOSData(result?.data || null);
         return;
       } catch (error) {
-        setErrorMessage("Loi ket noi PayOS.");
+        setErrorMessage(`Loi ket noi PayOS: ${error.message || "Khong ro nguyen nhan."}`);
         return;
       } finally {
         setLoadingPayOS(false);

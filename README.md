@@ -2,6 +2,18 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## API Config (important)
+
+Create a `.env` file in this folder (`WEB/rent-clothes`) and set:
+
+```env
+REACT_APP_API_BASE_URL=http://127.0.0.1:5000
+```
+
+- Local dev: keep the value above.
+- Deploy frontend (Vercel/Netlify): change to your backend public URL (for example `https://your-backend-domain.com`).
+
+
 ## Available Scripts
 
 In the project directory, you can run:

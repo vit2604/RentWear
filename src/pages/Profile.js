@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import MainLayout from "../components/MainLayout";
 import { useAppContext } from "../context/AppContext";
-
-const API_BASE = "http://localhost:5000";
+import { apiUrl } from "../config/api";
 
 export default function Profile() {
   const { token, user, setUser } = useAppContext();
@@ -22,7 +21,7 @@ export default function Profile() {
 
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(`${API_BASE}/profile`, {
+        const response = await axios.get(apiUrl("/profile"), {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -65,7 +64,7 @@ export default function Profile() {
 
     try {
       const response = await axios.put(
-        `${API_BASE}/profile`,
+        apiUrl("/profile"),
         { phone, address },
         {
           headers: { Authorization: `Bearer ${token}` }
