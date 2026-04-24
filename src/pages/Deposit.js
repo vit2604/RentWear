@@ -5,33 +5,81 @@ import { useAppContext } from "../context/AppContext";
 import { formatCurrency } from "../utils/format";
 
 const paymentMethods = [
-  { id: "bank", name: "Chuyển khoản ngân hàng" },
-  { id: "wallet", name: "Ví điện tử" },
-  { id: "cod", name: "Tiền mặt khi nhận" }
+  { id: "payos", name: "PayOS (QR/Chuyen khoan)" },
+  { id: "bank", name: "Chuyen khoan ngan hang thu cong" },
+  { id: "cod", name: "Tien mat khi nhan" }
 ];
 
 export default function Deposit() {
   const navigate = useNavigate();
   const { booking, placeOrder } = useAppContext();
+
   const [selectedMethod, setSelectedMethod] = useState(paymentMethods[0].id);
   const [errorMessage, setErrorMessage] = useState("");
+  const [loadingPayOS, setLoadingPayOS] = useState(false);
+  const [payOSData, setPayOSData] = useState(null);
 
   const totalItems = useMemo(
-    () =>
-      booking?.items?.reduce((total, item) => total + item.quantity, 0) || 0,
+    () => booking?.items?.reduce((total, item) => total + item.quantity, 0) || 0,
     [booking]
   );
 
-  const handleConfirmPayment = () => {
-    if (!booking) {
-      setErrorMessage("Không tìm thấy thông tin đặt lịch.");
+  const handleConfirmPayOSDone = () => {
+    const order = placeOrder({ paymentMethod: "payos" });
+
+    if (!order) {
+      setErrorMessage("Khong tao duoc don hang sau buoc thanh toan.");
       return;
+    }
+
+    navigate("/orders", { state: { orderId: order.id } });
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!booking) {
+      setErrorMessage("Khong tim thay thong tin dat lich.");
+      return;
+    }
+
+    setErrorMessage("");
+
+    if (selectedMethod === "payos") {
+      try {
+        setLoadingPayOS(true);
+        setPayOSData(null);
+
+        const response = await fetch("http://127.0.0.1:5000/payments/payos/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            amount: booking.total,
+            description: `RENTWEAR-${Date.now().toString().slice(-6)}`
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          setErrorMessage(result?.message || "Khong tao duoc thanh toan PayOS.");
+          return;
+        }
+
+        setPayOSData(result?.data || null);
+        return;
+      } catch (error) {
+        setErrorMessage("Loi ket noi PayOS.");
+        return;
+      } finally {
+        setLoadingPayOS(false);
+      }
     }
 
     const order = placeOrder({ paymentMethod: selectedMethod });
 
     if (!order) {
-      setErrorMessage("Không tạo được đơn hàng. Vui lòng thử lại.");
+      setErrorMessage("Khong tao duoc don hang. Vui long thu lai.");
       return;
     }
 
@@ -41,22 +89,22 @@ export default function Deposit() {
   return (
     <MainLayout>
       <section className="section-heading section-heading-left">
-        <h2>Thanh toán</h2>
-        <p>Chọn phương thức thanh toán và xác nhận để hệ thống giữ lịch thuê.</p>
+        <h2>Thanh toan</h2>
+        <p>Chon phuong thuc thanh toan va xac nhan de he thong giu lich thue.</p>
       </section>
 
       {!booking ? (
         <div className="card empty-state">
-          <p>Bạn chưa có thông tin đặt lịch để thanh toán.</p>
+          <p>Ban chua co thong tin dat lich de thanh toan.</p>
           <Link to="/booking" className="btn-primary inline-btn">
-            Quay lại đặt lịch
+            Quay lai dat lich
           </Link>
         </div>
       ) : (
         <div className="page-grid">
           <section className="stack">
             <article className="card">
-              <h3>Phương thức thanh toán</h3>
+              <h3>Phuong thuc thanh toan</h3>
               <div className="payment-methods">
                 {paymentMethods.map((method) => (
                   <label className="payment-option" key={method.id}>
@@ -75,55 +123,92 @@ export default function Deposit() {
             </article>
 
             <article className="card">
-              <h3>Chi tiết thanh toán</h3>
+              <h3>Chi tiet thanh toan</h3>
               <div className="summary-row">
-                <span>Số lượng sản phẩm</span>
+                <span>So luong san pham</span>
                 <span>x{totalItems}</span>
               </div>
               <div className="summary-row">
-                <span>Tổng tiền hàng</span>
+                <span>Tong tien hang</span>
                 <span>{formatCurrency(booking.subtotal)}</span>
               </div>
               <div className="summary-row">
-                <span>Phí vận chuyển</span>
-                <span>
-                  {booking.shippingFee === 0
-                    ? "Miễn phí"
-                    : formatCurrency(booking.shippingFee)}
-                </span>
+                <span>Phi van chuyen</span>
+                <span>{booking.shippingFee === 0 ? "Mien phi" : formatCurrency(booking.shippingFee)}</span>
               </div>
               <div className="summary-row">
-                <span>Giảm giá</span>
+                <span>Giam gia</span>
                 <span>-{formatCurrency(booking.discount)}</span>
               </div>
               <div className="summary-total">
-                <span>Tổng</span>
+                <span>Tong</span>
                 <strong>{formatCurrency(booking.total)}</strong>
               </div>
             </article>
+
+            {payOSData ? (
+              <article className="card">
+                <h3>Thong tin chuyen khoan PayOS</h3>
+                <div className="summary-row">
+                  <span>Ngan hang (BIN)</span>
+                  <span>{payOSData.bin || "--"}</span>
+                </div>
+                <div className="summary-row">
+                  <span>So tai khoan</span>
+                  <span>{payOSData.accountNumber || "--"}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Chu tai khoan</span>
+                  <span>{payOSData.accountName || "--"}</span>
+                </div>
+                <div className="summary-row">
+                  <span>So tien</span>
+                  <span>{formatCurrency(payOSData.amount || booking.total)}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Noi dung</span>
+                  <span>{payOSData.description || "--"}</span>
+                </div>
+
+                {payOSData.checkoutUrl ? (
+                  <a
+                    className="btn-secondary !mt-2"
+                    href={payOSData.checkoutUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Mo trang thanh toan PayOS
+                  </a>
+                ) : null}
+
+                <button type="button" className="btn-primary !mt-2" onClick={handleConfirmPayOSDone}>
+                  Toi da thanh toan xong
+                </button>
+              </article>
+            ) : null}
           </section>
 
           <aside className="card summary-card">
-            <h3>Xác nhận hóa đơn</h3>
+            <h3>Xac nhan hoa don</h3>
             <div className="summary-row">
-              <span>Thời gian thuê</span>
+              <span>Thoi gian thue</span>
               <span>
-                {booking.startDate} đến {booking.endDate}
+                {booking.startDate} den {booking.endDate}
               </span>
             </div>
             <div className="summary-row">
-              <span>Số ngày</span>
-              <span>{booking.days} ngày</span>
+              <span>So ngay</span>
+              <span>{booking.days} ngay</span>
             </div>
             <div className="summary-total">
-              <span>Tổng cần thanh toán</span>
+              <span>Tong can thanh toan</span>
               <strong>{formatCurrency(booking.total)}</strong>
             </div>
 
             {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
-            <button type="button" className="btn-primary" onClick={handleConfirmPayment}>
-              XÁC NHẬN THANH TOÁN
+            <button type="button" className="btn-primary" onClick={handleConfirmPayment} disabled={loadingPayOS}>
+              {loadingPayOS ? "DANG TAO THANH TOAN..." : "XAC NHAN THANH TOAN"}
             </button>
           </aside>
         </div>

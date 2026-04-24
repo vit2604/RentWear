@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Orders from "./pages/Orders";
 import Product from "./pages/Product";
+import ProductDetail from "./pages/ProductDetail";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 
@@ -51,6 +52,7 @@ function App() {
           }
         />
         <Route path="/product" element={<Product />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

@@ -4,9 +4,10 @@ import { useAppContext } from "../context/AppContext";
 import { formatCurrency, formatDate } from "../utils/format";
 
 const paymentLabel = {
-  bank: "Chuyển khoản ngân hàng",
-  wallet: "Ví điện tử",
-  cod: "Tiền mặt khi nhận"
+  payos: "PayOS (QR/chuyen khoan)",
+  bank: "Chuyen khoan ngan hang",
+  wallet: "Vi dien tu",
+  cod: "Tien mat khi nhan"
 };
 
 export default function Orders() {

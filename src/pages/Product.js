@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../components/MainLayout";
 import { useAppContext } from "../context/AppContext";
-import { getRealtimeStatus, isDateRangeAvailable } from "../data/products";
+import { getRealtimeStatus } from "../data/products";
 import { formatCurrency } from "../utils/format";
 
 const statusLabels = {
@@ -23,15 +23,12 @@ const defaultProductForm = {
 
 export default function Product() {
   const navigate = useNavigate();
-  const detailsRef = useRef(null);
 
-  const { addProduct, addToCart, isAdmin, products, updateProduct } = useAppContext();
+  const { addProduct, isAdmin, products, updateProduct } = useAppContext();
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
-  const [selectedProduct, setSelectedProduct] = useState(products[0] || null);
-  const [sizeSelection, setSizeSelection] = useState({});
 
   const [openForm, setOpenForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState("");
@@ -55,47 +52,6 @@ export default function Product() {
       return matchesQuery && matchesCategory && matchesStatus;
     });
   }, [category, products, query, status]);
-
-  useEffect(() => {
-    if (!filteredProducts.length) {
-      setSelectedProduct(null);
-      return;
-    }
-
-    if (!selectedProduct) {
-      setSelectedProduct(filteredProducts[0]);
-      return;
-    }
-
-    const selectedStillVisible = filteredProducts.some(
-      (product) => product.id === selectedProduct.id
-    );
-
-    if (!selectedStillVisible) {
-      setSelectedProduct(filteredProducts[0]);
-    }
-  }, [filteredProducts, selectedProduct]);
-
-  const scrollToDetails = () => {
-    if (detailsRef.current) {
-      detailsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
-  const handleSelectProduct = (product, shouldScroll = false) => {
-    setSelectedProduct(product);
-
-    if (shouldScroll) {
-      requestAnimationFrame(() => {
-        setTimeout(scrollToDetails, 80);
-      });
-    }
-  };
-
-  const handleAddToCart = (product) => {
-    const size = sizeSelection[product.id] || product.defaultSize;
-    addToCart(product, size);
-  };
 
   const resetForm = () => {
     setForm(defaultProductForm);
@@ -145,13 +101,9 @@ export default function Product() {
     };
 
     if (editingProductId) {
-      const updated = updateProduct(editingProductId, payload);
-      if (updated) {
-        setSelectedProduct(updated);
-      }
+      updateProduct(editingProductId, payload);
     } else {
-      const created = addProduct(payload);
-      setSelectedProduct(created);
+      addProduct(payload);
     }
 
     setOpenForm(false);
@@ -245,16 +197,13 @@ export default function Product() {
 
               return (
                 <article
-                  className={`product-card compact ${
-                    selectedProduct?.id === product.id ? "selected" : ""
-                  }`}
+                  className="product-card compact"
                   key={product.id}
                 >
                   <img
                     src={product.image}
                     alt={product.name}
                     className="product-image compact"
-                    onClick={() => handleSelectProduct(product)}
                   />
                   <div className="product-info compact">
                     <p className="product-category">{product.category}</p>
@@ -268,102 +217,27 @@ export default function Product() {
                     <button
                       type="button"
                       className="btn-secondary"
-                      onClick={() => handleSelectProduct(product, true)}
+                      onClick={() => navigate(`/product/${product.id}`)}
                     >
                       Xem chi tiết
                     </button>
+                    {isAdmin ? (
+                      <button
+                        type="button"
+                        className="btn-link"
+                        onClick={() => openEditProduct(product)}
+                      >
+                        Sửa sản phẩm
+                      </button>
+                    ) : null}
                   </div>
                 </article>
               );
             })}
           </div>
-
-          {selectedProduct ? (
-            <section ref={detailsRef} className="card product-detail-card">
-              <div className="product-detail-head">
-                <h3>{selectedProduct.name}</h3>
-                <p>{selectedProduct.description}</p>
-              </div>
-
-              <div className="product-detail-row">
-                <span>Giá thuê theo ngày</span>
-                <strong>{formatCurrency(selectedProduct.pricePerDay)}</strong>
-              </div>
-
-              <div className="product-detail-row">
-                <span>Tình trạng hôm nay</span>
-                <strong>{statusLabels[getRealtimeStatus(selectedProduct)]}</strong>
-              </div>
-
-              <div className="product-detail-row">
-                <span>Kiểm tra nhanh lịch trống (7 ngày tới)</span>
-                <strong>
-                  {isDateRangeAvailable(
-                    selectedProduct,
-                    new Date().toISOString().split("T")[0],
-                    new Date(Date.now() + 6 * 24 * 60 * 60 * 1000)
-                      .toISOString()
-                      .split("T")[0]
-                  )
-                    ? "Còn lịch"
-                    : "Nên đặt sớm"}
-                </strong>
-              </div>
-
-              <label htmlFor="size-select" className="label-text">
-                Chọn kích cỡ
-              </label>
-              <select
-                id="size-select"
-                className="input"
-                value={sizeSelection[selectedProduct.id] || selectedProduct.defaultSize}
-                onChange={(event) =>
-                  setSizeSelection((previous) => ({
-                    ...previous,
-                    [selectedProduct.id]: event.target.value
-                  }))
-                }
-              >
-                {selectedProduct.sizeOptions.map((size) => (
-                  <option key={size} value={size}>
-                    Cỡ {size}
-                  </option>
-                ))}
-              </select>
-
-              <div className="button-row">
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => handleAddToCart(selectedProduct)}
-                >
-                  Thêm vào giỏ
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => {
-                    handleAddToCart(selectedProduct);
-                    navigate("/cart");
-                  }}
-                >
-                  Đi đến giỏ hàng
-                </button>
-              </div>
-
-              {isAdmin ? (
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => openEditProduct(selectedProduct)}
-                >
-                  Sửa thông tin sản phẩm
-                </button>
-              ) : null}
-            </section>
-          ) : (
+          {filteredProducts.length === 0 ? (
             <section className="card empty-state">Không tìm thấy sản phẩm phù hợp.</section>
-          )}
+          ) : null}
         </div>
       </div>
 
