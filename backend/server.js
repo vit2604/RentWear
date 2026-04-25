@@ -68,7 +68,7 @@ const requireDatabase = (req, res, next) => {
   if (!isDatabaseConnected()) {
     return res.status(503).json({
       message:
-        "Backend da chay nhung chua ket noi MongoDB. Vui long bat MongoDB hoac kiem tra MONGO_URI."
+        "Backend ?? ch?y nh?ng ch?a k?t n?i MongoDB. Vui l?ng b?t MongoDB ho?c ki?m tra MONGO_URI."
     });
   }
 
@@ -112,20 +112,20 @@ const authMiddleware = async (req, res, next) => {
     const token = getTokenFromHeader(req.headers.authorization);
 
     if (!token) {
-      return res.status(401).json({ message: "Thieu token xac thuc." });
+      return res.status(401).json({ message: "Thi?u token x?c th?c." });
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(401).json({ message: "Token khong hop le." });
+      return res.status(401).json({ message: "Token kh?ng h?p l?." });
     }
 
     req.user = user;
     return next();
   } catch (error) {
-    return res.status(401).json({ message: "Khong co quyen truy cap." });
+    return res.status(401).json({ message: "Kh?ng c? quy?n truy c?p." });
   }
 };
 
@@ -176,7 +176,7 @@ const callPayOS = ({ path, method = "POST", payload = null }) =>
 
             resolve(parsed);
           } catch (error) {
-            reject({ message: "Khong parse duoc phan hoi tu PayOS.", raw });
+            reject({ message: "Kh?ng parse ???c ph?n h?i t? PayOS.", raw });
           }
         });
       }
@@ -195,7 +195,7 @@ app.post("/payments/payos/create", async (req, res) => {
   try {
     const amount = Number(req.body?.amount || 0);
     if (!amount || amount <= 0) {
-      return res.status(400).json({ message: "So tien thanh toan khong hop le." });
+      return res.status(400).json({ message: "S? ti?n thanh to?n kh?ng h?p l?." });
     }
 
     const cancelUrl =
@@ -250,14 +250,14 @@ app.post("/payments/payos/create", async (req, res) => {
     });
 
     return res.status(200).json({
-      message: "Tao thanh toan PayOS thanh cong.",
+      message: "T?o thanh to?n PayOS th?nh c?ng.",
       data: payOSResponse?.data || null,
       raw: payOSResponse
     });
   } catch (error) {
     console.error("[PAYOS_CREATE_ERROR]", error);
     return res.status(502).json({
-      message: "Khong tao duoc thanh toan PayOS.",
+      message: "Kh?ng t?o ???c thanh to?n PayOS.",
       error
     });
   }
@@ -268,14 +268,14 @@ app.post("/register", requireDatabase, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email va mat khau la bat buoc." });
+      return res.status(400).json({ message: "Email v? m?t kh?u l? b?t bu?c." });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
-      return res.status(409).json({ message: "Email da ton tai." });
+      return res.status(409).json({ message: "Email ?? t?n t?i." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -286,10 +286,10 @@ app.post("/register", requireDatabase, async (req, res) => {
       role: resolveRoleByEmail(normalizedEmail)
     });
 
-    return res.json({ message: "Dang ky thanh cong." });
+    return res.json({ message: "??ng k? th?nh c?ng." });
   } catch (error) {
     console.error("[REGISTER_ERROR]", error);
-    return res.status(500).json({ message: "Dang ky that bai." });
+    return res.status(500).json({ message: "??ng k? th?t b?i." });
   }
 });
 
@@ -298,14 +298,14 @@ app.post("/login", requireDatabase, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email va mat khau la bat buoc." });
+      return res.status(400).json({ message: "Email v? m?t kh?u l? b?t bu?c." });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
-      return res.status(404).json({ message: "Khong tim thay tai khoan." });
+      return res.status(404).json({ message: "Kh?ng t?m th?y t?i kho?n." });
     }
 
     if (!user.role) {
@@ -316,7 +316,7 @@ app.post("/login", requireDatabase, async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Sai mat khau." });
+      return res.status(401).json({ message: "Sai m?t kh?u." });
     }
 
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
@@ -333,7 +333,7 @@ app.post("/login", requireDatabase, async (req, res) => {
     });
   } catch (error) {
     console.error("[LOGIN_ERROR]", error);
-    return res.status(500).json({ message: "Dang nhap that bai." });
+    return res.status(500).json({ message: "??ng nh?p th?t b?i." });
   }
 });
 
@@ -356,7 +356,7 @@ app.put("/profile", requireDatabase, authMiddleware, async (req, res) => {
     await req.user.save();
 
     return res.json({
-      message: "Cap nhat ho so thanh cong.",
+      message: "C?p nh?t h? s? th?nh c?ng.",
       user: {
         id: req.user._id,
         email: req.user.email,
@@ -367,7 +367,7 @@ app.put("/profile", requireDatabase, authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error("[PROFILE_UPDATE_ERROR]", error);
-    return res.status(500).json({ message: "Cap nhat ho so that bai." });
+    return res.status(500).json({ message: "C?p nh?t h? s? th?t b?i." });
   }
 });
 

@@ -38,7 +38,7 @@ export default function Profile() {
         if (isMounted) {
           setErrorMessage(
             error.response?.data?.message ||
-          error.message ||
+              error.message ||
               "Không tải được thông tin hồ sơ."
           );
         }

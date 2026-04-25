@@ -7,7 +7,7 @@ const isLocalhost =
 export const API_BASE_URL = envBaseUrl || (isLocalhost ? "http://127.0.0.1:5000" : "");
 export const API_CONFIG_ERROR = API_BASE_URL
   ? ""
-  : "Chua cau hinh REACT_APP_API_BASE_URL cho frontend production.";
+  : "Chưa cấu hình REACT_APP_API_BASE_URL cho frontend production.";
 
 export const apiUrl = (path = "") => {
   if (!API_BASE_URL) {

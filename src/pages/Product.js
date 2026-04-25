@@ -6,8 +6,8 @@ import { getRealtimeStatus } from "../data/products";
 import { formatCurrency } from "../utils/format";
 
 const statusLabels = {
-  available: "San hang",
-  unavailable: "Tam het"
+  available: "Sẵn hàng",
+  unavailable: "Tạm hết"
 };
 
 const defaultProductForm = {
@@ -116,7 +116,7 @@ export default function Product() {
     setFormError("");
 
     if (!form.name.trim() || !form.category.trim()) {
-      setFormError("Ten san pham va danh muc la bat buoc.");
+      setFormError("Tên sản phẩm và danh mục là bắt buộc.");
       return;
     }
 
@@ -182,8 +182,8 @@ export default function Product() {
     <MainLayout>
       <section className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="section-heading section-heading-left !mb-0">
-          <h2>Danh sach san pham</h2>
-          <p>Loc theo ten, danh muc, size, gia va tinh trang.</p>
+          <h2>Danh sách sản phẩm</h2>
+          <p>Lọc theo tên, danh mục, size, giá và tình trạng.</p>
         </div>
 
         {isAdmin ? (
@@ -191,8 +191,8 @@ export default function Product() {
             type="button"
             onClick={openCreateProduct}
             className="mt-2 inline-flex h-11 w-11 items-center justify-center rounded-full bg-brand text-2xl font-semibold text-white shadow transition hover:scale-105 hover:bg-brand-hover"
-            title="Them san pham"
-            aria-label="Them san pham"
+            title="Thêm sản phẩm"
+            aria-label="Thêm sản phẩm"
           >
             +
           </button>
@@ -201,10 +201,10 @@ export default function Product() {
 
       <div className="product-layout">
         <aside className="card filter-card">
-          <h3>Bo loc</h3>
+          <h3>Bộ lọc</h3>
 
           <label htmlFor="search" className="label-text">
-            Tim kiem
+            Tìm kiếm
           </label>
           <input
             id="search"
@@ -212,11 +212,11 @@ export default function Product() {
             className="input"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Nhap ten san pham"
+            placeholder="Nhập tên sản phẩm"
           />
 
           <label htmlFor="category" className="label-text">
-            Danh muc
+            Danh mục
           </label>
           <select
             id="category"
@@ -226,7 +226,7 @@ export default function Product() {
           >
             {categories.map((item) => (
               <option key={item} value={item}>
-                {item === "all" ? "Tat ca" : item}
+                {item === "all" ? "Tất cả" : item}
               </option>
             ))}
           </select>
@@ -240,7 +240,7 @@ export default function Product() {
             value={sizeFilter}
             onChange={(event) => setSizeFilter(event.target.value)}
           >
-            <option value="all">Tat ca</option>
+            <option value="all">Tất cả</option>
             <option value="S">S</option>
             <option value="M">M</option>
             <option value="L">L</option>
@@ -248,7 +248,7 @@ export default function Product() {
           </select>
 
           <label htmlFor="status" className="label-text">
-            Tinh trang
+            Tình trạng
           </label>
           <select
             id="status"
@@ -256,12 +256,12 @@ export default function Product() {
             value={status}
             onChange={(event) => setStatus(event.target.value)}
           >
-            <option value="all">Tat ca</option>
-            <option value="available">San hang</option>
-            <option value="unavailable">Tam het</option>
+            <option value="all">Tất cả</option>
+            <option value="available">Sẵn hàng</option>
+            <option value="unavailable">Tạm hết</option>
           </select>
 
-          <label className="label-text">Gia: {formatCurrency(minPrice)} - {formatCurrency(maxPrice)}</label>
+          <label className="label-text">Giá: {formatCurrency(minPrice)} - {formatCurrency(maxPrice)}</label>
           <input
             type="range"
             min={0}
@@ -278,7 +278,7 @@ export default function Product() {
           />
 
           <label htmlFor="sort" className="label-text">
-            Sap xep
+            Sắp xếp
           </label>
           <select
             id="sort"
@@ -286,9 +286,9 @@ export default function Product() {
             value={sort}
             onChange={(event) => setSort(event.target.value)}
           >
-            <option value="default">Mac dinh</option>
-            <option value="asc">Gia tang dan</option>
-            <option value="desc">Gia giam dan</option>
+            <option value="default">Mặc định</option>
+            <option value="asc">Giá tăng dần</option>
+            <option value="desc">Giá giảm dần</option>
           </select>
 
           <button
@@ -305,7 +305,7 @@ export default function Product() {
               setSort("default");
             }}
           >
-            Dat lai bo loc
+            Đặt lại bộ lọc
           </button>
         </aside>
 
@@ -320,20 +320,20 @@ export default function Product() {
                   <div className="product-info compact">
                     <p className="product-category">{product.category}</p>
                     <h3>{product.name}</h3>
-                    <p className="product-price">{formatCurrency(product.pricePerDay)} / ngay</p>
+                    <p className="product-price">{formatCurrency(product.pricePerDay)} / ngày</p>
                     <p className={`status-chip ${currentStatus}`}>{statusLabels[currentStatus]}</p>
 
                     <button type="button" className="btn-primary" onClick={() => handleQuickRent(product)}>
-                      Thue nhanh
+                      Thuê nhanh
                     </button>
 
                     <button type="button" className="btn-secondary" onClick={() => navigate(`/product/${product.id}`)}>
-                      Xem chi tiet
+                      Xem chi tiết
                     </button>
 
                     {isAdmin ? (
                       <button type="button" className="btn-link" onClick={() => openEditProduct(product)}>
-                        Sua san pham
+                        Sửa sản phẩm
                       </button>
                     ) : null}
                   </div>
@@ -342,7 +342,7 @@ export default function Product() {
             })}
           </div>
           {filteredProducts.length === 0 ? (
-            <section className="card empty-state">Khong tim thay san pham phu hop.</section>
+            <section className="card empty-state">Không tìm thấy sản phẩm phù hợp.</section>
           ) : null}
         </div>
       </div>
@@ -352,7 +352,7 @@ export default function Product() {
           <div className="w-[min(680px,100%)] rounded-2xl border border-line bg-white p-5 shadow-xl">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="m-0 text-xl font-semibold">
-                {editingProductId ? "Chinh sua san pham" : "Them san pham moi"}
+                {editingProductId ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
               </h3>
               <button
                 type="button"
@@ -362,7 +362,7 @@ export default function Product() {
                   resetForm();
                 }}
               >
-                Dong
+                Đóng
               </button>
             </div>
 
@@ -370,7 +370,7 @@ export default function Product() {
               <div className="grid gap-2 sm:grid-cols-2">
                 <div>
                   <label htmlFor="modal-name" className="label-text">
-                    Ten san pham
+                    Tên sản phẩm
                   </label>
                   <input
                     id="modal-name"
@@ -381,7 +381,7 @@ export default function Product() {
                 </div>
                 <div>
                   <label htmlFor="modal-category" className="label-text">
-                    Danh muc
+                    Danh mục
                   </label>
                   <input
                     id="modal-category"
@@ -395,7 +395,7 @@ export default function Product() {
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label htmlFor="modal-price" className="label-text">
-                    Gia/ngay
+                    Giá/ngày
                   </label>
                   <input
                     id="modal-price"
@@ -407,7 +407,7 @@ export default function Product() {
                 </div>
                 <div>
                   <label htmlFor="modal-stock" className="label-text">
-                    Ton kho
+                    Tồn kho
                   </label>
                   <input
                     id="modal-stock"
@@ -419,7 +419,7 @@ export default function Product() {
                 </div>
                 <div>
                   <label htmlFor="modal-sizes" className="label-text">
-                    Danh sach co (S,M,L)
+                    Danh sách cỡ (S,M,L)
                   </label>
                   <input
                     id="modal-sizes"
@@ -430,7 +430,7 @@ export default function Product() {
                 </div>
                 <div>
                   <label htmlFor="modal-default-size" className="label-text">
-                    Co mac dinh
+                    Cỡ mặc định
                   </label>
                   <input
                     id="modal-default-size"
@@ -443,7 +443,7 @@ export default function Product() {
 
               <div>
                 <label htmlFor="modal-image" className="label-text">
-                  Link anh
+                  Link ảnh
                 </label>
                 <input
                   id="modal-image"
@@ -455,7 +455,7 @@ export default function Product() {
 
               <div>
                 <label htmlFor="modal-description" className="label-text">
-                  Mo ta
+                  Mô tả
                 </label>
                 <textarea
                   id="modal-description"
@@ -468,7 +468,7 @@ export default function Product() {
               {formError ? <p className="form-error">{formError}</p> : null}
 
               <button type="submit" className="btn-primary">
-                {editingProductId ? "Luu thay doi" : "Them san pham"}
+                {editingProductId ? "Lưu thay đổi" : "Thêm sản phẩm"}
               </button>
             </form>
           </div>

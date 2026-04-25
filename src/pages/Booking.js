@@ -30,9 +30,9 @@ export default function Booking() {
   const [phone, setPhone] = useState(booking?.customer?.phone || user?.phone || "");
   const [address, setAddress] = useState(booking?.customer?.address || user?.address || "");
   const [savedAddresses] = useState([
-    "123 Le Duan, Hai Chau, Da Nang",
-    "45 Nguyen Van Linh, Thanh Khe, Da Nang",
-    "KTX Bach Khoa Da Nang"
+    "123 Lê Duẩn, Hải Châu, Đà Nẵng",
+    "45 Nguyễn Văn Linh, Thanh Khê, Đà Nẵng",
+    "KTX Bách Khoa Đà Nẵng"
   ]);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -74,11 +74,11 @@ export default function Booking() {
   };
 
   const validate = () => {
-    if (!items.length) return "Chua co san pham trong gio.";
-    if (!name.trim()) return "Vui long nhap ten nguoi nhan.";
-    if (!phone.trim()) return "Vui long nhap so dien thoai.";
-    if (!address.trim()) return "Vui long nhap dia chi giao nhan.";
-    if (unavailableItems.length > 0) return "Co san pham bi trung lich.";
+    if (!items.length) return "Chưa có sản phẩm trong giỏ.";
+    if (!name.trim()) return "Vui lòng nhập tên người nhận.";
+    if (!phone.trim()) return "Vui lòng nhập số điện thoại.";
+    if (!address.trim()) return "Vui lòng nhập địa chỉ giao nhận.";
+    if (unavailableItems.length > 0) return "Có sản phẩm bị trùng lịch.";
 
     return "";
   };
@@ -116,22 +116,22 @@ export default function Booking() {
   return (
     <MainLayout>
       <section className="section-heading section-heading-left">
-        <h2>Dat lich thue</h2>
-        <p>Chon ngay nhan, ngay tra va thong tin giao nhan.</p>
+        <h2>Đặt lịch thuê</h2>
+        <p>Chọn ngày nhận, ngày trả và thông tin giao nhận.</p>
       </section>
 
       {items.length === 0 ? (
         <div className="card empty-state">
-          <p>Chua co san pham trong gio.</p>
+          <p>Chưa có sản phẩm trong giỏ.</p>
           <Link to="/cart" className="btn-primary inline-btn">
-            Quay lai gio hang
+            Quay lại giỏ hàng
           </Link>
         </div>
       ) : (
         <div className="page-grid booking-grid">
           <section className="stack">
             <article className="card">
-              <h3>Lich thue</h3>
+              <h3>Lịch thuê</h3>
 
               <DateRange
                 ranges={range}
@@ -149,29 +149,29 @@ export default function Booking() {
                       quickDay === days ? "bg-[#1f1f1f] text-white" : "bg-white"
                     }`}
                   >
-                    {days} ngay
+                    {days} ngày
                   </button>
                 ))}
               </div>
 
               <p className="meta-text mt-2">
-                {format(startDate, "dd/MM/yyyy")} den {format(endDate, "dd/MM/yyyy")} ({rentalDays} ngay)
+                {format(startDate, "dd/MM/yyyy")} đến {format(endDate, "dd/MM/yyyy")} ({rentalDays} ngày)
               </p>
             </article>
 
             <article className="card stack compact-gap">
-              <h3>Thong tin khach hang</h3>
+              <h3>Thông tin khách hàng</h3>
 
               <input
                 className="input"
-                placeholder="Ten nguoi nhan"
+                placeholder="Tên người nhận"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
               />
 
               <input
                 className="input"
-                placeholder="So dien thoai"
+                placeholder="Số điện thoại"
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
               />
@@ -181,7 +181,7 @@ export default function Booking() {
                 value={address}
                 onChange={(event) => setAddress(event.target.value)}
               >
-                <option value="">Chon dia chi co san</option>
+                <option value="">Chọn địa chỉ có sẵn</option>
                 {savedAddresses.map((itemAddress) => (
                   <option key={itemAddress} value={itemAddress}>
                     {itemAddress}
@@ -191,14 +191,14 @@ export default function Booking() {
 
               <input
                 className="input"
-                placeholder="Hoac nhap dia chi moi"
+                placeholder="Hoặc nhập địa chỉ mới"
                 value={address}
                 onChange={(event) => setAddress(event.target.value)}
               />
 
               <textarea
                 className="input textarea"
-                placeholder="Ghi chu giao nhan"
+                placeholder="Ghi chú giao nhận"
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
               />
@@ -210,13 +210,13 @@ export default function Booking() {
                   <div>
                     <h4>{item.name}</h4>
                     <p className="meta-text">
-                      Co {item.size} x{item.quantity}
+                      Cỡ {item.size} x{item.quantity}
                     </p>
                   </div>
                   <div className="booking-item-right">
                     <strong>{formatCurrency(item.pricePerDay * item.quantity)}</strong>
                     <span className={`status-chip ${item.available ? "available" : "unavailable"}`}>
-                      {item.available ? "Con lich" : "Trung lich"}
+                      {item.available ? "Còn lịch" : "Trùng lịch"}
                     </span>
                   </div>
                 </div>
@@ -225,32 +225,32 @@ export default function Booking() {
           </section>
 
           <aside className="card summary-card">
-            <h3>Chi tiet dat lich</h3>
+            <h3>Chi tiết đặt lịch</h3>
 
             <div className="summary-row">
-              <span>So ngay thue</span>
-              <span>{rentalDays} ngay</span>
+              <span>Số ngày thuê</span>
+              <span>{rentalDays} ngày</span>
             </div>
 
             <div className="summary-row">
-              <span>Tam tinh</span>
+              <span>Tạm tính</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
 
             <div className="summary-row">
-              <span>Giam gia dai ngay</span>
+              <span>Giảm giá dài ngày</span>
               <span>-{formatCurrency(discount)}</span>
             </div>
 
             <div className="summary-total">
-              <span>Tong thanh toan</span>
+              <span>Tổng thanh toán</span>
               <strong>{formatCurrency(total)}</strong>
             </div>
 
             {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
             <button type="button" className="btn-primary" onClick={handleContinuePayment}>
-              TIEP TUC THANH TOAN
+              TIẾP TỤC THANH TOÁN
             </button>
           </aside>
         </div>

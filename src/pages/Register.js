@@ -35,7 +35,8 @@ export default function Register() {
     } catch (error) {
       setErrorMessage(
         error.response?.data?.message ||
-          error.message || "Đăng ký thất bại. Vui lòng thử lại."
+          error.message ||
+          "Đăng ký thất bại. Vui lòng thử lại."
       );
     } finally {
       setSubmitting(false);

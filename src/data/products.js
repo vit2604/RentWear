@@ -100,8 +100,7 @@ const toDate = (value) => {
   return date;
 };
 
-const overlaps = (startA, endA, startB, endB) =>
-  startA <= endB && startB <= endA;
+const overlaps = (startA, endA, startB, endB) => startA <= endB && startB <= endA;
 
 export const isDateRangeAvailable = (product, startDate, endDate) => {
   if (!product || !startDate || !endDate) {

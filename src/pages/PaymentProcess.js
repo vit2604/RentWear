@@ -29,10 +29,9 @@ export default function PaymentProcess() {
   return (
     <MainLayout>
       <div className="card empty-state">
-        <h3>Dang xu ly thanh toan {method.toUpperCase()}...</h3>
-        <p>He thong dang xac nhan giao dich, vui long doi trong giay lat.</p>
+        <h3>Đang xử lý thanh toán {method.toUpperCase()}...</h3>
+        <p>Hệ thống đang xác nhận giao dịch, vui lòng đợi trong giây lát.</p>
       </div>
     </MainLayout>
   );
 }
-
