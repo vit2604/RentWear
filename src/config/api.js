@@ -5,9 +5,15 @@ const isLocalhost =
   window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
 export const API_BASE_URL = envBaseUrl || (isLocalhost ? "http://127.0.0.1:5000" : "");
+export const API_CONFIG_ERROR = API_BASE_URL
+  ? ""
+  : "Chua cau hinh REACT_APP_API_BASE_URL cho frontend production.";
 
 export const apiUrl = (path = "") => {
+  if (!API_BASE_URL) {
+    throw new Error(API_CONFIG_ERROR);
+  }
+
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${API_BASE_URL}${normalizedPath}`;
 };
-

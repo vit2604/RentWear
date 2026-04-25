@@ -45,6 +45,7 @@ export default function Login() {
     } catch (error) {
       setErrorMessage(
         error.response?.data?.message ||
+          error.message ||
           "Không kết nối được server. Kiểm tra backend và thử lại."
       );
     } finally {

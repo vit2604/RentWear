@@ -38,6 +38,7 @@ export default function Profile() {
         if (isMounted) {
           setErrorMessage(
             error.response?.data?.message ||
+          error.message ||
               "Không tải được thông tin hồ sơ."
           );
         }
@@ -76,6 +77,7 @@ export default function Profile() {
     } catch (error) {
       setErrorMessage(
         error.response?.data?.message ||
+          error.message ||
           "Không cập nhật được hồ sơ. Vui lòng thử lại."
       );
     } finally {

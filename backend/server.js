@@ -7,9 +7,9 @@ const https = require("https");
 const crypto = require("crypto");
 
 const app = express();
-const PORT = 5000;
+const PORT = Number(process.env.PORT || 5000);
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/rentclothes";
-const JWT_SECRET = "RENTWEAR_SECRET_KEY";
+const JWT_SECRET = process.env.JWT_SECRET || "RENTWEAR_SECRET_KEY";
 const ADMIN_EMAILS = new Set(["admin@rentwear.com", "admin@rentwear.local"]);
 
 const PAYOS_BASE_URL = process.env.PAYOS_BASE_URL || "https://api-merchant.payos.vn";
@@ -21,8 +21,17 @@ const PAYOS_CHECKSUM_KEY =
   process.env.PAYOS_CHECKSUM_KEY ||
   "3110d32468e757481dcb17b70f20d45bef34f418f063a36d049a7ee2e68b4313";
 
+const CORS_ORIGIN = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
+  : true;
+
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: CORS_ORIGIN,
+    credentials: true
+  })
+);
 app.use((req, res, next) => {
   const startedAt = Date.now();
 
@@ -32,6 +41,14 @@ app.use((req, res, next) => {
   });
 
   next();
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "rentwear-backend",
+    databaseReady: isDatabaseConnected()
+  });
 });
 
 mongoose.set("bufferCommands", false);
