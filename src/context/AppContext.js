@@ -45,6 +45,16 @@ const readJSON = (key, fallbackValue) => {
   }
 };
 
+const readArrayJSON = (key) => {
+  const value = readJSON(key, []);
+  return Array.isArray(value) ? value : [];
+};
+
+const readObjectJSON = (key) => {
+  const value = readJSON(key, null);
+  return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+};
+
 const writeJSON = (key, value) => {
   localStorage.setItem(key, JSON.stringify(value));
 };
@@ -74,70 +84,87 @@ const normalizeSizeOptions = (value) => {
 };
 
 const normalizeProductPayload = (productPayload = {}, fallbackProduct = null) => {
+  const safePayload =
+    productPayload && typeof productPayload === "object" ? productPayload : {};
+  const safeFallback =
+    fallbackProduct && typeof fallbackProduct === "object" ? fallbackProduct : null;
+
   const sizeOptions = normalizeSizeOptions(
-    productPayload.sizeOptions ?? fallbackProduct?.sizeOptions ?? ["M"]
+    safePayload.sizeOptions ?? safeFallback?.sizeOptions ?? ["M"]
   );
 
-  const stock = Math.max(1, Number(productPayload.stock ?? fallbackProduct?.stock ?? 1));
+  const stock = Math.max(1, Number(safePayload.stock ?? safeFallback?.stock ?? 1));
   const rented = Math.max(
     0,
-    Math.min(stock, Number(productPayload.rented ?? fallbackProduct?.rented ?? 0))
+    Math.min(stock, Number(safePayload.rented ?? safeFallback?.rented ?? 0))
   );
 
   const defaultSize =
-    productPayload.defaultSize ||
-    fallbackProduct?.defaultSize ||
+    safePayload.defaultSize ||
+    safeFallback?.defaultSize ||
     sizeOptions[0] ||
     "M";
 
   const rawCategory = String(
-    productPayload.category ?? fallbackProduct?.category ?? "Khác"
+    safePayload.category ?? safeFallback?.category ?? "Khác"
   ).trim();
   const normalizedCategory = LEGACY_CATEGORY_MAP[rawCategory] || rawCategory;
 
   const rawDescription = String(
-    productPayload.description ?? fallbackProduct?.description ?? ""
+    safePayload.description ?? safeFallback?.description ?? ""
   ).trim();
   const normalizedDescription = LEGACY_DESCRIPTION_MAP[rawDescription] || rawDescription;
 
   return {
-    id: fallbackProduct?.id || createProductId(),
-    name: String(productPayload.name ?? fallbackProduct?.name ?? "").trim(),
+    id: safeFallback?.id || createProductId(),
+    name: String(safePayload.name ?? safeFallback?.name ?? "").trim(),
     category: normalizedCategory || "Khác",
     pricePerDay: Math.max(
       1000,
-      Number(productPayload.pricePerDay ?? fallbackProduct?.pricePerDay ?? 1000)
+      Number(safePayload.pricePerDay ?? safeFallback?.pricePerDay ?? 1000)
     ),
     sizeOptions,
     defaultSize: sizeOptions.includes(defaultSize) ? defaultSize : sizeOptions[0],
     stock,
     rented,
     image:
-      String(productPayload.image ?? fallbackProduct?.image ?? "").trim() ||
+      String(safePayload.image ?? safeFallback?.image ?? "").trim() ||
       "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
     description: normalizedDescription,
-    blockedDates: fallbackProduct?.blockedDates ?? []
+    blockedDates: safeFallback?.blockedDates ?? []
   };
 };
 
 export function AppProvider({ children }) {
-  const [token, setToken] = useState(localStorage.getItem(STORAGE_KEYS.token) || "");
-  const [user, setUser] = useState(() => readJSON(STORAGE_KEYS.user, null));
+  const [token, setToken] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.token) || "";
+    } catch (error) {
+      return "";
+    }
+  });
+  const [user, setUser] = useState(() => readObjectJSON(STORAGE_KEYS.user));
   const [products, setProducts] = useState(() => {
-    const savedProducts = readJSON(STORAGE_KEYS.products, initialProducts);
+    const savedProducts = readArrayJSON(STORAGE_KEYS.products);
 
-    if (!Array.isArray(savedProducts) || !savedProducts.length) {
+    if (!savedProducts.length) {
       return initialProducts.map((product) => normalizeProductPayload(product, product));
     }
 
-    return savedProducts.map((product) => normalizeProductPayload(product, product));
+    const normalizedSavedProducts = savedProducts
+      .map((product) => normalizeProductPayload(product, product))
+      .filter(Boolean);
+
+    return normalizedSavedProducts.length
+      ? normalizedSavedProducts
+      : initialProducts.map((product) => normalizeProductPayload(product, product));
   });
-  const [cart, setCart] = useState(() => readJSON(STORAGE_KEYS.cart, []));
+  const [cart, setCart] = useState(() => readArrayJSON(STORAGE_KEYS.cart));
   const [checkoutItems, setCheckoutItems] = useState(() =>
-    readJSON(STORAGE_KEYS.checkoutItems, [])
+    readArrayJSON(STORAGE_KEYS.checkoutItems)
   );
-  const [booking, setBooking] = useState(() => readJSON(STORAGE_KEYS.booking, null));
-  const [orders, setOrders] = useState(() => readJSON(STORAGE_KEYS.orders, []));
+  const [booking, setBooking] = useState(() => readObjectJSON(STORAGE_KEYS.booking));
+  const [orders, setOrders] = useState(() => readArrayJSON(STORAGE_KEYS.orders));
 
   useEffect(() => {
     if (token) {
@@ -452,3 +479,4 @@ export function useAppContext() {
 
   return context;
 }
+
