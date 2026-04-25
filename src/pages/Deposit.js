@@ -6,9 +6,11 @@ import { apiUrl } from "../config/api";
 import { formatCurrency } from "../utils/format";
 
 const paymentMethods = [
-  { id: "payos", name: "PayOS (QR/Chuyen khoan)" },
-  { id: "bank", name: "Chuyen khoan ngan hang thu cong" },
-  { id: "cod", name: "Tien mat khi nhan" }
+  { id: "payos", name: "PayOS (QR/Chuyen khoan)", icon: "QR" },
+  { id: "bank", name: "Chuyen khoan ngan hang", icon: "BANK" },
+  { id: "vnpay", name: "VNPay", icon: "VNPAY" },
+  { id: "momo", name: "Vi MoMo", icon: "MOMO" },
+  { id: "cod", name: "Tien mat khi nhan", icon: "COD" }
 ];
 
 export default function Deposit() {
@@ -84,6 +86,20 @@ export default function Deposit() {
       return;
     }
 
+    if (["vnpay", "momo"].includes(selectedMethod)) {
+      navigate("/payment-process", {
+        state: {
+          orderId: order.id,
+          method: selectedMethod
+        }
+      });
+      return;
+    }
+
+    if (selectedMethod === "bank") {
+      alert("Chuyen khoan: STK 123456789 - BIDV");
+    }
+
     navigate("/orders", { state: { orderId: order.id } });
   };
 
@@ -109,7 +125,8 @@ export default function Deposit() {
               <div className="payment-methods">
                 {paymentMethods.map((method) => (
                   <label className="payment-option" key={method.id}>
-                    <div>
+                    <div className="flex items-center gap-2">
+                      <span className="meta-text">{method.icon}</span>
                       <strong>{method.name}</strong>
                     </div>
                     <input
@@ -147,6 +164,28 @@ export default function Deposit() {
               </div>
             </article>
 
+            {selectedMethod === "bank" ? (
+              <article className="card">
+                <h3>Thong tin chuyen khoan thu cong</h3>
+                <div className="summary-row">
+                  <span>Ngan hang</span>
+                  <span>BIDV</span>
+                </div>
+                <div className="summary-row">
+                  <span>So tai khoan</span>
+                  <span>123456789</span>
+                </div>
+                <div className="summary-row">
+                  <span>Chu tai khoan</span>
+                  <span>RentWear</span>
+                </div>
+                <div className="summary-row">
+                  <span>Noi dung</span>
+                  <span>RENTWEAR-{Date.now().toString().slice(-6)}</span>
+                </div>
+              </article>
+            ) : null}
+
             {payOSData ? (
               <article className="card">
                 <h3>Thong tin chuyen khoan PayOS</h3>
@@ -172,12 +211,7 @@ export default function Deposit() {
                 </div>
 
                 {payOSData.checkoutUrl ? (
-                  <a
-                    className="btn-secondary !mt-2"
-                    href={payOSData.checkoutUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a className="btn-secondary !mt-2" href={payOSData.checkoutUrl} target="_blank" rel="noreferrer">
                     Mo trang thanh toan PayOS
                   </a>
                 ) : null}
@@ -201,6 +235,22 @@ export default function Deposit() {
               <span>So ngay</span>
               <span>{booking.days} ngay</span>
             </div>
+            {booking.customer ? (
+              <>
+                <div className="summary-row">
+                  <span>Nguoi nhan</span>
+                  <span>{booking.customer.name || "--"}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Dien thoai</span>
+                  <span>{booking.customer.phone || "--"}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Dia chi</span>
+                  <span>{booking.customer.address || "--"}</span>
+                </div>
+              </>
+            ) : null}
             <div className="summary-total">
               <span>Tong can thanh toan</span>
               <strong>{formatCurrency(booking.total)}</strong>

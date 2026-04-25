@@ -355,11 +355,14 @@ export function AppProvider({ children }) {
       return null;
     }
 
+    const isOnlinePayment = ["vnpay", "momo"].includes(paymentMethod);
+
     const order = {
       id: `RW-${Date.now()}`,
       createdAt: new Date().toISOString(),
       status: "confirmed",
       paymentMethod,
+      paymentStatus: isOnlinePayment ? "pending" : "paid",
       ...booking
     };
 
@@ -376,6 +379,16 @@ export function AppProvider({ children }) {
     setBooking(null);
 
     return order;
+  };
+
+  const updateOrderStatus = (orderId, nextPaymentStatus) => {
+    setOrders((previousOrders) =>
+      previousOrders.map((order) =>
+        order.id === orderId
+          ? { ...order, paymentStatus: nextPaymentStatus }
+          : order
+      )
+    );
   };
 
   const cartCount = useMemo(
@@ -423,6 +436,7 @@ export function AppProvider({ children }) {
     setCheckoutItems,
     setBooking,
     placeOrder,
+    updateOrderStatus,
     getItemKey
   };
 

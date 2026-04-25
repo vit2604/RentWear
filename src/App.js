@@ -9,6 +9,7 @@ import Deposit from "./pages/Deposit";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Orders from "./pages/Orders";
+import PaymentProcess from "./pages/PaymentProcess";
 import Product from "./pages/Product";
 import ProductDetail from "./pages/ProductDetail";
 import Profile from "./pages/Profile";
@@ -87,6 +88,14 @@ function App() {
           element={
             <RequireAuth>
               <Orders />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/payment-process"
+          element={
+            <RequireAuth>
+              <PaymentProcess />
             </RequireAuth>
           }
         />

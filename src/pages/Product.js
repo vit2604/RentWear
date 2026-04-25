@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../components/MainLayout";
 import { useAppContext } from "../context/AppContext";
@@ -6,8 +6,8 @@ import { getRealtimeStatus } from "../data/products";
 import { formatCurrency } from "../utils/format";
 
 const statusLabels = {
-  available: "Sẵn hàng",
-  unavailable: "Tạm hết"
+  available: "San hang",
+  unavailable: "Tam het"
 };
 
 const defaultProductForm = {
@@ -23,17 +23,33 @@ const defaultProductForm = {
 
 export default function Product() {
   const navigate = useNavigate();
-
-  const { addProduct, isAdmin, products, updateProduct } = useAppContext();
+  const {
+    addProduct,
+    isAdmin,
+    products,
+    updateProduct,
+    setBooking,
+    setCheckoutItems
+  } = useAppContext();
 
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [category, setCategory] = useState("all");
+  const [sizeFilter, setSizeFilter] = useState("all");
   const [status, setStatus] = useState("all");
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(500000);
+  const [sort, setSort] = useState("default");
 
   const [openForm, setOpenForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState("");
   const [form, setForm] = useState(defaultProductForm);
   const [formError, setFormError] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const categories = useMemo(
     () => ["all", ...new Set(products.map((product) => product.category))],
@@ -41,17 +57,32 @@ export default function Product() {
   );
 
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const statusValue = getRealtimeStatus(product);
-      const matchesQuery =
-        product.name.toLowerCase().includes(query.toLowerCase()) ||
-        product.category.toLowerCase().includes(query.toLowerCase());
-      const matchesCategory = category === "all" || product.category === category;
-      const matchesStatus = status === "all" || statusValue === status;
+    const normalizedQuery = debouncedQuery.toLowerCase().trim();
 
-      return matchesQuery && matchesCategory && matchesStatus;
+    let result = products.filter((product) => {
+      const currentStatus = getRealtimeStatus(product);
+      const matchesQuery =
+        !normalizedQuery ||
+        product.name.toLowerCase().includes(normalizedQuery) ||
+        product.category.toLowerCase().includes(normalizedQuery) ||
+        product.sizeOptions.some((sizeOption) => sizeOption.toLowerCase().includes(normalizedQuery));
+
+      const matchesCategory = category === "all" || product.category === category;
+      const matchesStatus = status === "all" || currentStatus === status;
+      const matchesSize = sizeFilter === "all" || product.sizeOptions.includes(sizeFilter);
+      const matchesPrice = product.pricePerDay >= minPrice && product.pricePerDay <= maxPrice;
+
+      return matchesQuery && matchesCategory && matchesStatus && matchesSize && matchesPrice;
     });
-  }, [category, products, query, status]);
+
+    if (sort === "asc") {
+      result = [...result].sort((first, second) => first.pricePerDay - second.pricePerDay);
+    } else if (sort === "desc") {
+      result = [...result].sort((first, second) => second.pricePerDay - first.pricePerDay);
+    }
+
+    return result;
+  }, [category, debouncedQuery, maxPrice, minPrice, products, sizeFilter, sort, status]);
 
   const resetForm = () => {
     setForm(defaultProductForm);
@@ -85,7 +116,7 @@ export default function Product() {
     setFormError("");
 
     if (!form.name.trim() || !form.category.trim()) {
-      setFormError("Tên sản phẩm và danh mục là bắt buộc.");
+      setFormError("Ten san pham va danh muc la bat buoc.");
       return;
     }
 
@@ -110,12 +141,49 @@ export default function Product() {
     resetForm();
   };
 
+  const handleQuickRent = (product) => {
+    const now = new Date();
+    const startDate = now.toISOString().split("T")[0];
+    const end = new Date(now);
+    end.setDate(now.getDate() + 1);
+    const endDate = end.toISOString().split("T")[0];
+
+    const item = {
+      productId: product.id,
+      name: product.name,
+      image: product.image,
+      pricePerDay: product.pricePerDay,
+      size: product.defaultSize,
+      quantity: 1
+    };
+
+    setCheckoutItems([item]);
+    setBooking({
+      startDate,
+      endDate,
+      days: 1,
+      items: [item],
+      subtotal: product.pricePerDay,
+      shippingFee: 0,
+      discount: 0,
+      total: product.pricePerDay,
+      customer: {
+        name: "",
+        phone: "",
+        address: ""
+      },
+      note: ""
+    });
+
+    navigate("/payment");
+  };
+
   return (
     <MainLayout>
       <section className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="section-heading section-heading-left !mb-0">
-          <h2>Danh sách sản phẩm</h2>
-          <p>Tìm kiếm theo tên, danh mục và tình trạng cho thuê.</p>
+          <h2>Danh sach san pham</h2>
+          <p>Loc theo ten, danh muc, size, gia va tinh trang.</p>
         </div>
 
         {isAdmin ? (
@@ -123,8 +191,8 @@ export default function Product() {
             type="button"
             onClick={openCreateProduct}
             className="mt-2 inline-flex h-11 w-11 items-center justify-center rounded-full bg-brand text-2xl font-semibold text-white shadow transition hover:scale-105 hover:bg-brand-hover"
-            title="Thêm sản phẩm"
-            aria-label="Thêm sản phẩm"
+            title="Them san pham"
+            aria-label="Them san pham"
           >
             +
           </button>
@@ -133,10 +201,10 @@ export default function Product() {
 
       <div className="product-layout">
         <aside className="card filter-card">
-          <h3>Bộ lọc</h3>
+          <h3>Bo loc</h3>
 
           <label htmlFor="search" className="label-text">
-            Tìm kiếm
+            Tim kiem
           </label>
           <input
             id="search"
@@ -144,11 +212,11 @@ export default function Product() {
             className="input"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Nhập tên sản phẩm"
+            placeholder="Nhap ten san pham"
           />
 
           <label htmlFor="category" className="label-text">
-            Danh mục
+            Danh muc
           </label>
           <select
             id="category"
@@ -158,13 +226,29 @@ export default function Product() {
           >
             {categories.map((item) => (
               <option key={item} value={item}>
-                {item === "all" ? "Tất cả" : item}
+                {item === "all" ? "Tat ca" : item}
               </option>
             ))}
           </select>
 
+          <label htmlFor="size" className="label-text">
+            Size
+          </label>
+          <select
+            id="size"
+            className="input"
+            value={sizeFilter}
+            onChange={(event) => setSizeFilter(event.target.value)}
+          >
+            <option value="all">Tat ca</option>
+            <option value="S">S</option>
+            <option value="M">M</option>
+            <option value="L">L</option>
+            <option value="XL">XL</option>
+          </select>
+
           <label htmlFor="status" className="label-text">
-            Tình trạng
+            Tinh trang
           </label>
           <select
             id="status"
@@ -172,9 +256,39 @@ export default function Product() {
             value={status}
             onChange={(event) => setStatus(event.target.value)}
           >
-            <option value="all">Tất cả</option>
-            <option value="available">Sẵn hàng</option>
-            <option value="unavailable">Tạm hết</option>
+            <option value="all">Tat ca</option>
+            <option value="available">San hang</option>
+            <option value="unavailable">Tam het</option>
+          </select>
+
+          <label className="label-text">Gia: {formatCurrency(minPrice)} - {formatCurrency(maxPrice)}</label>
+          <input
+            type="range"
+            min={0}
+            max={500000}
+            value={minPrice}
+            onChange={(event) => setMinPrice(Number(event.target.value))}
+          />
+          <input
+            type="range"
+            min={0}
+            max={500000}
+            value={maxPrice}
+            onChange={(event) => setMaxPrice(Number(event.target.value))}
+          />
+
+          <label htmlFor="sort" className="label-text">
+            Sap xep
+          </label>
+          <select
+            id="sort"
+            className="input"
+            value={sort}
+            onChange={(event) => setSort(event.target.value)}
+          >
+            <option value="default">Mac dinh</option>
+            <option value="asc">Gia tang dan</option>
+            <option value="desc">Gia giam dan</option>
           </select>
 
           <button
@@ -182,11 +296,16 @@ export default function Product() {
             className="btn-secondary"
             onClick={() => {
               setQuery("");
+              setDebouncedQuery("");
               setCategory("all");
+              setSizeFilter("all");
               setStatus("all");
+              setMinPrice(0);
+              setMaxPrice(500000);
+              setSort("default");
             }}
           >
-            Đặt lại bộ lọc
+            Dat lai bo loc
           </button>
         </aside>
 
@@ -196,38 +315,25 @@ export default function Product() {
               const currentStatus = getRealtimeStatus(product);
 
               return (
-                <article
-                  className="product-card compact"
-                  key={product.id}
-                >
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="product-image compact"
-                  />
+                <article className="product-card compact" key={product.id}>
+                  <img src={product.image} alt={product.name} className="product-image compact" />
                   <div className="product-info compact">
                     <p className="product-category">{product.category}</p>
                     <h3>{product.name}</h3>
-                    <p className="product-price">
-                      {formatCurrency(product.pricePerDay)} / ngày
-                    </p>
-                    <p className={`status-chip ${currentStatus}`}>
-                      {statusLabels[currentStatus]}
-                    </p>
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      onClick={() => navigate(`/product/${product.id}`)}
-                    >
-                      Xem chi tiết
+                    <p className="product-price">{formatCurrency(product.pricePerDay)} / ngay</p>
+                    <p className={`status-chip ${currentStatus}`}>{statusLabels[currentStatus]}</p>
+
+                    <button type="button" className="btn-primary" onClick={() => handleQuickRent(product)}>
+                      Thue nhanh
                     </button>
+
+                    <button type="button" className="btn-secondary" onClick={() => navigate(`/product/${product.id}`)}>
+                      Xem chi tiet
+                    </button>
+
                     {isAdmin ? (
-                      <button
-                        type="button"
-                        className="btn-link"
-                        onClick={() => openEditProduct(product)}
-                      >
-                        Sửa sản phẩm
+                      <button type="button" className="btn-link" onClick={() => openEditProduct(product)}>
+                        Sua san pham
                       </button>
                     ) : null}
                   </div>
@@ -236,7 +342,7 @@ export default function Product() {
             })}
           </div>
           {filteredProducts.length === 0 ? (
-            <section className="card empty-state">Không tìm thấy sản phẩm phù hợp.</section>
+            <section className="card empty-state">Khong tim thay san pham phu hop.</section>
           ) : null}
         </div>
       </div>
@@ -246,7 +352,7 @@ export default function Product() {
           <div className="w-[min(680px,100%)] rounded-2xl border border-line bg-white p-5 shadow-xl">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="m-0 text-xl font-semibold">
-                {editingProductId ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
+                {editingProductId ? "Chinh sua san pham" : "Them san pham moi"}
               </h3>
               <button
                 type="button"
@@ -256,7 +362,7 @@ export default function Product() {
                   resetForm();
                 }}
               >
-                Đóng
+                Dong
               </button>
             </div>
 
@@ -264,28 +370,24 @@ export default function Product() {
               <div className="grid gap-2 sm:grid-cols-2">
                 <div>
                   <label htmlFor="modal-name" className="label-text">
-                    Tên sản phẩm
+                    Ten san pham
                   </label>
                   <input
                     id="modal-name"
                     className="input"
                     value={form.name}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, name: event.target.value }))
-                    }
+                    onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
                   />
                 </div>
                 <div>
                   <label htmlFor="modal-category" className="label-text">
-                    Danh mục
+                    Danh muc
                   </label>
                   <input
                     id="modal-category"
                     className="input"
                     value={form.category}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, category: event.target.value }))
-                    }
+                    onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}
                   />
                 </div>
               </div>
@@ -293,92 +395,80 @@ export default function Product() {
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label htmlFor="modal-price" className="label-text">
-                    Giá/ngày
+                    Gia/ngay
                   </label>
                   <input
                     id="modal-price"
                     type="number"
                     className="input"
                     value={form.pricePerDay}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, pricePerDay: event.target.value }))
-                    }
+                    onChange={(event) => setForm((prev) => ({ ...prev, pricePerDay: event.target.value }))}
                   />
                 </div>
                 <div>
                   <label htmlFor="modal-stock" className="label-text">
-                    Tồn kho
+                    Ton kho
                   </label>
                   <input
                     id="modal-stock"
                     type="number"
                     className="input"
                     value={form.stock}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, stock: event.target.value }))
-                    }
+                    onChange={(event) => setForm((prev) => ({ ...prev, stock: event.target.value }))}
                   />
                 </div>
                 <div>
                   <label htmlFor="modal-sizes" className="label-text">
-                    Danh sách cỡ (S,M,L)
+                    Danh sach co (S,M,L)
                   </label>
                   <input
                     id="modal-sizes"
                     className="input"
                     value={form.sizeOptions}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, sizeOptions: event.target.value }))
-                    }
+                    onChange={(event) => setForm((prev) => ({ ...prev, sizeOptions: event.target.value }))}
                   />
                 </div>
                 <div>
                   <label htmlFor="modal-default-size" className="label-text">
-                    Cỡ mặc định
+                    Co mac dinh
                   </label>
                   <input
                     id="modal-default-size"
                     className="input"
                     value={form.defaultSize}
-                    onChange={(event) =>
-                      setForm((prev) => ({ ...prev, defaultSize: event.target.value }))
-                    }
+                    onChange={(event) => setForm((prev) => ({ ...prev, defaultSize: event.target.value }))}
                   />
                 </div>
               </div>
 
               <div>
                 <label htmlFor="modal-image" className="label-text">
-                  Link ảnh
+                  Link anh
                 </label>
                 <input
                   id="modal-image"
                   className="input"
                   value={form.image}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, image: event.target.value }))
-                  }
+                  onChange={(event) => setForm((prev) => ({ ...prev, image: event.target.value }))}
                 />
               </div>
 
               <div>
                 <label htmlFor="modal-description" className="label-text">
-                  Mô tả
+                  Mo ta
                 </label>
                 <textarea
                   id="modal-description"
                   className="input textarea"
                   value={form.description}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, description: event.target.value }))
-                  }
+                  onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
                 />
               </div>
 
               {formError ? <p className="form-error">{formError}</p> : null}
 
               <button type="submit" className="btn-primary">
-                {editingProductId ? "Lưu thay đổi" : "Thêm sản phẩm"}
+                {editingProductId ? "Luu thay doi" : "Them san pham"}
               </button>
             </form>
           </div>
