@@ -1,82 +1,87 @@
-# Getting Started with Create React App
+# RentWear (Frontend + Backend)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 1) Cài dependencies
 
-## API Config (important)
+```bash
+# frontend
+npm install
 
-Create a `.env` file in this folder (`WEB/rent-clothes`) and set:
+# backend
+cd backend
+npm install
+cd ..
+```
+
+## 2) Cấu hình môi trường
+
+### Frontend
+
+Tạo file `.env` ở thư mục gốc `rent-clothes`:
 
 ```env
 REACT_APP_API_BASE_URL=http://127.0.0.1:5000
 ```
 
-- Local dev: keep the value above.
-- Deploy frontend (Vercel/Netlify): change to your backend public URL (for example `https://your-backend-domain.com`).
+### Backend
 
+Tạo file `backend/.env` dựa trên `backend/.env.example`:
 
-## Available Scripts
+```env
+PORT=5000
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster-host>/rentclothes?retryWrites=true&w=majority
+JWT_SECRET=change_this_secret
+CORS_ORIGIN=http://localhost:3000,https://your-frontend-domain.vercel.app
 
-In the project directory, you can run:
+PAYOS_BASE_URL=https://api-merchant.payos.vn
+PAYOS_CLIENT_ID=your_payos_client_id
+PAYOS_API_KEY=your_payos_api_key
+PAYOS_CHECKSUM_KEY=your_payos_checksum_key
+PAYOS_RETURN_URL=http://localhost:3000/payment?status=success
+PAYOS_CANCEL_URL=http://localhost:3000/payment?status=cancel
+```
 
-### `npm start`
+## 3) Chạy project local
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Mở 2 terminal:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```bash
+# terminal 1: backend
+cd backend
+npm start
+```
 
-### `npm test`
+```bash
+# terminal 2: frontend
+npm start
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 4) Kiểm tra nhanh backend
 
-### `npm run build`
+```bash
+curl http://127.0.0.1:5000/health
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Kỳ vọng:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```json
+{"ok":true,"service":"rentwear-backend","databaseReady":true}
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 5) Build kiểm tra trước khi push
 
-### `npm run eject`
+```bash
+npm run build
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 6) Deploy
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Frontend: Vercel/Netlify
+  - Env cần set: `REACT_APP_API_BASE_URL=https://<backend-domain>`
+- Backend: Render/Railway
+  - Env cần set: `MONGO_URI`, `JWT_SECRET`, `CORS_ORIGIN`, `PAYOS_*`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 7) Lưu ý bảo mật
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Không commit file `.env`
+- Không commit mật khẩu MongoDB/PayOS
+- Đổi key ngay nếu từng lộ trên chat/log

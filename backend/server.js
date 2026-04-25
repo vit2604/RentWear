@@ -1,4 +1,6 @@
-﻿const express = require("express");
+require("dotenv").config();
+
+const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
@@ -7,19 +9,16 @@ const https = require("https");
 const crypto = require("crypto");
 
 const app = express();
+
 const PORT = Number(process.env.PORT || 5000);
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/rentclothes";
 const JWT_SECRET = process.env.JWT_SECRET || "RENTWEAR_SECRET_KEY";
 const ADMIN_EMAILS = new Set(["admin@rentwear.com", "admin@rentwear.local"]);
 
 const PAYOS_BASE_URL = process.env.PAYOS_BASE_URL || "https://api-merchant.payos.vn";
-const PAYOS_CLIENT_ID =
-  process.env.PAYOS_CLIENT_ID || "ad8d8be4-114e-4067-a097-ed620050ea2f";
-const PAYOS_API_KEY =
-  process.env.PAYOS_API_KEY || "ed4f9f69-b42b-4bce-bda9-686846a18d2e";
-const PAYOS_CHECKSUM_KEY =
-  process.env.PAYOS_CHECKSUM_KEY ||
-  "3110d32468e757481dcb17b70f20d45bef34f418f063a36d049a7ee2e68b4313";
+const PAYOS_CLIENT_ID = process.env.PAYOS_CLIENT_ID || "";
+const PAYOS_API_KEY = process.env.PAYOS_API_KEY || "";
+const PAYOS_CHECKSUM_KEY = process.env.PAYOS_CHECKSUM_KEY || "";
 
 const CORS_ORIGIN = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
@@ -32,6 +31,7 @@ app.use(
     credentials: true
   })
 );
+
 app.use((req, res, next) => {
   const startedAt = Date.now();
 
@@ -68,7 +68,7 @@ const requireDatabase = (req, res, next) => {
   if (!isDatabaseConnected()) {
     return res.status(503).json({
       message:
-        "Backend ?? ch?y nh?ng ch?a k?t n?i MongoDB. Vui l?ng b?t MongoDB ho?c ki?m tra MONGO_URI."
+        "Backend đã chạy nhưng chưa kết nối MongoDB. Vui lòng bật MongoDB hoặc kiểm tra MONGO_URI."
     });
   }
 
@@ -112,24 +112,33 @@ const authMiddleware = async (req, res, next) => {
     const token = getTokenFromHeader(req.headers.authorization);
 
     if (!token) {
-      return res.status(401).json({ message: "Thi?u token x?c th?c." });
+      return res.status(401).json({ message: "Thiếu token xác thực." });
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(401).json({ message: "Token kh?ng h?p l?." });
+      return res.status(401).json({ message: "Token không hợp lệ." });
     }
 
     req.user = user;
     return next();
   } catch (error) {
-    return res.status(401).json({ message: "Kh?ng c? quy?n truy c?p." });
+    return res.status(401).json({ message: "Không có quyền truy cập." });
   }
 };
 
-const generatePayOSSignature = ({ amount, cancelUrl, description, orderCode, returnUrl }) => {
+const isPayOSConfigured = () =>
+  Boolean(PAYOS_CLIENT_ID && PAYOS_API_KEY && PAYOS_CHECKSUM_KEY);
+
+const generatePayOSSignature = ({
+  amount,
+  cancelUrl,
+  description,
+  orderCode,
+  returnUrl
+}) => {
   const data =
     `amount=${amount}` +
     `&cancelUrl=${cancelUrl}` +
@@ -176,7 +185,7 @@ const callPayOS = ({ path, method = "POST", payload = null }) =>
 
             resolve(parsed);
           } catch (error) {
-            reject({ message: "Kh?ng parse ???c ph?n h?i t? PayOS.", raw });
+            reject({ message: "Không parse được phản hồi từ PayOS.", raw });
           }
         });
       }
@@ -192,21 +201,35 @@ const callPayOS = ({ path, method = "POST", payload = null }) =>
   });
 
 app.post("/payments/payos/create", async (req, res) => {
+  if (!isPayOSConfigured()) {
+    return res.status(503).json({
+      message:
+        "Thiếu cấu hình PayOS trên backend (PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY)."
+    });
+  }
+
   try {
     const amount = Number(req.body?.amount || 0);
     if (!amount || amount <= 0) {
-      return res.status(400).json({ message: "S? ti?n thanh to?n kh?ng h?p l?." });
+      return res.status(400).json({ message: "Số tiền thanh toán không hợp lệ." });
     }
 
     const cancelUrl =
-      req.body?.cancelUrl || process.env.PAYOS_CANCEL_URL || "http://localhost:3000/payment?status=cancel";
+      req.body?.cancelUrl ||
+      process.env.PAYOS_CANCEL_URL ||
+      "http://localhost:3000/payment?status=cancel";
     const returnUrl =
-      req.body?.returnUrl || process.env.PAYOS_RETURN_URL || "http://localhost:3000/payment?status=success";
+      req.body?.returnUrl ||
+      process.env.PAYOS_RETURN_URL ||
+      "http://localhost:3000/payment?status=success";
 
-    const orderCode = Number(`${Date.now()}${Math.floor(Math.random() * 90 + 10)}`.slice(-12));
+    const orderCode = Number(
+      `${Date.now()}${Math.floor(Math.random() * 90 + 10)}`.slice(-12)
+    );
 
     const rawDescription = String(req.body?.description || `RW${orderCode}`).toUpperCase();
-    const description = rawDescription.replace(/[^A-Z0-9-_]/g, "").slice(0, 25) || `RW${orderCode}`;
+    const description =
+      rawDescription.replace(/[^A-Z0-9-_]/g, "").slice(0, 25) || `RW${orderCode}`;
 
     const requestData = {
       orderCode,
@@ -214,15 +237,16 @@ app.post("/payments/payos/create", async (req, res) => {
       description,
       cancelUrl,
       returnUrl,
-      items: Array.isArray(req.body?.items) && req.body.items.length
-        ? req.body.items
-        : [
-            {
-              name: "RentWear",
-              quantity: 1,
-              price: amount
-            }
-          ]
+      items:
+        Array.isArray(req.body?.items) && req.body.items.length
+          ? req.body.items
+          : [
+              {
+                name: "RentWear",
+                quantity: 1,
+                price: amount
+              }
+            ]
     };
 
     if (req.body?.buyerName) {
@@ -250,14 +274,14 @@ app.post("/payments/payos/create", async (req, res) => {
     });
 
     return res.status(200).json({
-      message: "T?o thanh to?n PayOS th?nh c?ng.",
+      message: "Tạo thanh toán PayOS thành công.",
       data: payOSResponse?.data || null,
       raw: payOSResponse
     });
   } catch (error) {
     console.error("[PAYOS_CREATE_ERROR]", error);
     return res.status(502).json({
-      message: "Kh?ng t?o ???c thanh to?n PayOS.",
+      message: "Không tạo được thanh toán PayOS.",
       error
     });
   }
@@ -268,14 +292,14 @@ app.post("/register", requireDatabase, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email v? m?t kh?u l? b?t bu?c." });
+      return res.status(400).json({ message: "Email và mật khẩu là bắt buộc." });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
-      return res.status(409).json({ message: "Email ?? t?n t?i." });
+      return res.status(409).json({ message: "Email đã tồn tại." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -286,10 +310,10 @@ app.post("/register", requireDatabase, async (req, res) => {
       role: resolveRoleByEmail(normalizedEmail)
     });
 
-    return res.json({ message: "??ng k? th?nh c?ng." });
+    return res.json({ message: "Đăng ký thành công." });
   } catch (error) {
     console.error("[REGISTER_ERROR]", error);
-    return res.status(500).json({ message: "??ng k? th?t b?i." });
+    return res.status(500).json({ message: "Đăng ký thất bại." });
   }
 });
 
@@ -298,14 +322,14 @@ app.post("/login", requireDatabase, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email v? m?t kh?u l? b?t bu?c." });
+      return res.status(400).json({ message: "Email và mật khẩu là bắt buộc." });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
-      return res.status(404).json({ message: "Kh?ng t?m th?y t?i kho?n." });
+      return res.status(404).json({ message: "Không tìm thấy tài khoản." });
     }
 
     if (!user.role) {
@@ -316,7 +340,7 @@ app.post("/login", requireDatabase, async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Sai m?t kh?u." });
+      return res.status(401).json({ message: "Sai mật khẩu." });
     }
 
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
@@ -333,7 +357,7 @@ app.post("/login", requireDatabase, async (req, res) => {
     });
   } catch (error) {
     console.error("[LOGIN_ERROR]", error);
-    return res.status(500).json({ message: "??ng nh?p th?t b?i." });
+    return res.status(500).json({ message: "Đăng nhập thất bại." });
   }
 });
 
@@ -356,7 +380,7 @@ app.put("/profile", requireDatabase, authMiddleware, async (req, res) => {
     await req.user.save();
 
     return res.json({
-      message: "C?p nh?t h? s? th?nh c?ng.",
+      message: "Cập nhật hồ sơ thành công.",
       user: {
         id: req.user._id,
         email: req.user.email,
@@ -367,7 +391,7 @@ app.put("/profile", requireDatabase, authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error("[PROFILE_UPDATE_ERROR]", error);
-    return res.status(500).json({ message: "C?p nh?t h? s? th?t b?i." });
+    return res.status(500).json({ message: "Cập nhật hồ sơ thất bại." });
   }
 });
 
