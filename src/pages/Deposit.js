@@ -14,6 +14,13 @@ const paymentMethods = [
   { id: "cod", name: "Tiền mặt khi nhận", icon: "COD" }
 ];
 
+const buildQrImageUrl = (payOSData) => {
+  const qrPayload = payOSData?.qrCode || payOSData?.checkoutUrl || "";
+  if (!qrPayload) return "";
+
+  return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(qrPayload)}`;
+};
+
 export default function Deposit() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,9 +29,12 @@ export default function Deposit() {
   const [selectedMethod, setSelectedMethod] = useState(paymentMethods[0].id);
   const [errorMessage, setErrorMessage] = useState("");
   const [loadingPayOS, setLoadingPayOS] = useState(false);
+  const [payOSData, setPayOSData] = useState(null);
 
   const methodsRef = useRef(null);
   const bankInfoRef = useRef(null);
+  const payOSInfoRef = useRef(null);
+  const payOSReturnHandledRef = useRef(false);
   const transferCodeRef = useRef(`RENTWEAR-${Date.now().toString().slice(-6)}`);
 
   const isCompactView = () => window.matchMedia("(max-width: 992px)").matches;
@@ -44,7 +54,46 @@ export default function Deposit() {
     if (selectedMethod === "bank") {
       setTimeout(() => scrollToSection(bankInfoRef), 120);
     }
+
+    if (selectedMethod !== "payos") {
+      setPayOSData(null);
+    }
   }, [selectedMethod]);
+
+  useEffect(() => {
+    if (!payOSData) return;
+    setTimeout(() => scrollToSection(payOSInfoRef), 120);
+  }, [payOSData]);
+
+  useEffect(() => {
+    if (!booking || payOSReturnHandledRef.current) return;
+
+    const params = new URLSearchParams(location.search);
+    const status = String(params.get("status") || "").toUpperCase();
+    const code = String(params.get("code") || "");
+    const isCancel = String(params.get("cancel") || "").toLowerCase() === "true";
+
+    if (!status && !code && !isCancel) {
+      return;
+    }
+
+    if (status === "PAID" || (code === "00" && !isCancel)) {
+      payOSReturnHandledRef.current = true;
+      const order = placeOrder({ paymentMethod: "payos" });
+
+      if (!order) {
+        setErrorMessage("Không tạo được đơn hàng sau khi nhận kết quả thanh toán PayOS.");
+        return;
+      }
+
+      navigate("/orders", { state: { orderId: order.id } });
+      return;
+    }
+
+    if (isCancel || status === "CANCELLED") {
+      setErrorMessage("Bạn đã hủy thanh toán PayOS. Vui lòng thử lại khi sẵn sàng.");
+    }
+  }, [booking, location.search, navigate, placeOrder]);
 
   const totalItems = useMemo(
     () => booking?.items?.reduce((total, item) => total + item.quantity, 0) || 0,
@@ -66,6 +115,7 @@ export default function Deposit() {
     if (selectedMethod === "payos") {
       try {
         setLoadingPayOS(true);
+        setPayOSData(null);
 
         const response = await fetch(apiUrl("/payments/payos/create"), {
           method: "POST",
@@ -85,19 +135,7 @@ export default function Deposit() {
           return;
         }
 
-        const order = placeOrder({ paymentMethod: "payos" });
-
-        if (!order) {
-          setErrorMessage("Không tạo được đơn hàng sau khi lấy mã thanh toán.");
-          return;
-        }
-
-        navigate("/orders", {
-          state: {
-            orderId: order.id,
-            paymentStatus: "paid"
-          }
-        });
+        setPayOSData(result?.data || null);
         return;
       } catch (error) {
         setErrorMessage(`Lỗi kết nối PayOS: ${error.message || "Không rõ nguyên nhân."}`);
@@ -215,6 +253,50 @@ export default function Deposit() {
                 </div>
               </article>
             ) : null}
+
+            {selectedMethod === "payos" && payOSData ? (
+              <article ref={payOSInfoRef} className="card scroll-anchor">
+                <h3>Mã QR thanh toán PayOS</h3>
+                <p className="meta-text">Quét mã bằng app ngân hàng để thanh toán ngay.</p>
+
+                {buildQrImageUrl(payOSData) ? (
+                  <div className="mb-3 flex justify-center">
+                    <img
+                      src={buildQrImageUrl(payOSData)}
+                      alt="QR thanh toán PayOS"
+                      className="h-[220px] w-[220px] rounded-xl border border-line bg-white p-2"
+                    />
+                  </div>
+                ) : null}
+
+                <div className="summary-row">
+                  <span>Ngân hàng (BIN)</span>
+                  <span>{payOSData.bin || "--"}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Số tài khoản</span>
+                  <span>{payOSData.accountNumber || "--"}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Chủ tài khoản</span>
+                  <span>{payOSData.accountName || "--"}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Số tiền</span>
+                  <span>{formatCurrency(payOSData.amount || booking.total)}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Nội dung</span>
+                  <span>{payOSData.description || transferCodeRef.current}</span>
+                </div>
+
+                {payOSData.checkoutUrl ? (
+                  <a className="btn-secondary !mt-2" href={payOSData.checkoutUrl} target="_blank" rel="noreferrer">
+                    Mở trang thanh toán PayOS
+                  </a>
+                ) : null}
+              </article>
+            ) : null}
           </section>
 
           <aside className="card summary-card scroll-anchor">
@@ -256,7 +338,7 @@ export default function Deposit() {
               {loadingPayOS
                 ? "ĐANG TẠO THANH TOÁN..."
                 : selectedMethod === "payos"
-                  ? "LẤY MÃ THANH TOÁN"
+                  ? "THANH TOÁN PAYOS"
                   : "XÁC NHẬN THANH TOÁN"}
             </button>
           </aside>
@@ -273,7 +355,7 @@ export default function Deposit() {
                 onClick={handleConfirmPayment}
                 disabled={loadingPayOS}
               >
-                {loadingPayOS ? "Đang xử lý" : selectedMethod === "payos" ? "Lấy mã" : "Xác nhận"}
+                {loadingPayOS ? "Đang xử lý" : selectedMethod === "payos" ? "Thanh toán" : "Xác nhận"}
               </button>
             </div>
           </div>
