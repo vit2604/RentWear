@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { DateRange } from "react-date-range";
 import { addDays, differenceInDays, format } from "date-fns";
@@ -36,6 +36,9 @@ export default function Booking() {
     "KTX Bách Khoa Đà Nẵng"
   ]);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isMobileView, setIsMobileView] = useState(() =>
+    window.matchMedia("(max-width: 992px)").matches
+  );
 
   const customerInfoRef = useRef(null);
   const bookingItemsRef = useRef(null);
@@ -44,6 +47,19 @@ export default function Booking() {
     if (!ref?.current) return;
     ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 992px)");
+    const onChange = (event) => setIsMobileView(event.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", onChange);
+      return () => mediaQuery.removeEventListener("change", onChange);
+    }
+
+    mediaQuery.addListener(onChange);
+    return () => mediaQuery.removeListener(onChange);
+  }, []);
 
   const startDate = range[0].startDate;
   const endDate = range[0].endDate;
@@ -168,7 +184,14 @@ export default function Booking() {
             <article className="card scroll-anchor">
               <h3>Lịch thuê</h3>
 
-              <DateRange ranges={range} onChange={handleRangeChange} minDate={new Date()} />
+              <DateRange
+                ranges={range}
+                onChange={handleRangeChange}
+                minDate={new Date()}
+                months={isMobileView ? 1 : 2}
+                direction={isMobileView ? "vertical" : "horizontal"}
+                showDateDisplay={!isMobileView}
+              />
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {[1, 2, 3, 5].map((days) => (

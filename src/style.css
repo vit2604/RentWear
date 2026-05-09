@@ -8,7 +8,7 @@
   html,
   body,
   #root {
-    @apply min-h-full;
+    @apply min-h-full max-w-full overflow-x-hidden;
   }
 
   body {
@@ -573,28 +573,23 @@
 
 @media (max-width: 1060px) {
   .top-nav-inner {
-    @apply grid-cols-[1fr_auto] gap-x-2 gap-y-2 py-2.5;
+    @apply grid-cols-1 gap-y-2 py-2.5;
   }
 
   .brand {
-    @apply justify-self-start;
+    @apply justify-self-center;
   }
 
   .auth-quick-actions {
-    @apply justify-self-end;
+    @apply justify-self-center flex-wrap justify-center;
   }
 
   .top-nav-links-wrap {
-    @apply col-span-2 -mx-1 overflow-x-auto px-1;
-    scrollbar-width: none;
-  }
-
-  .top-nav-links-wrap::-webkit-scrollbar {
-    display: none;
+    @apply col-span-1 mx-0 overflow-visible px-0;
   }
 
   .top-nav-links {
-    @apply w-max min-w-full flex-nowrap justify-start;
+    @apply w-full min-w-0 justify-center;
   }
 }
 
@@ -617,6 +612,48 @@
 
   .cart-item-image {
     @apply h-[98px] w-[72px];
+  }
+
+  .product-layout > *,
+  .page-grid > * {
+    min-width: 0;
+  }
+
+  .summary-row,
+  .summary-total,
+  .product-detail-row,
+  .order-grid,
+  .order-item,
+  .booking-item {
+    @apply flex-wrap items-start;
+  }
+
+  .summary-row > span:last-child,
+  .summary-total > strong,
+  .product-detail-row > strong,
+  .order-item > span:last-child {
+    @apply max-w-full break-words text-left;
+  }
+
+  .rdrDateRangeWrapper,
+  .rdrCalendarWrapper,
+  .rdrMonths {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .rdrMonths {
+    display: block !important;
+  }
+
+  .rdrMonth {
+    width: 100% !important;
+    padding: 0 0 8px;
+  }
+
+  .rdrDateDisplayWrapper,
+  .rdrMonthAndYearWrapper {
+    padding-inline: 8px;
   }
 
   .chat-widget-toggle {
@@ -649,8 +686,27 @@
     @apply gap-2;
   }
 
+  .product-grid,
+  .product-grid.compact-grid {
+    @apply grid-cols-1;
+  }
+
+  .nav-link,
+  .profile-chip {
+    @apply max-w-full;
+  }
+
   .nav-link {
     @apply px-2.5 py-[7px] text-[0.8rem];
+  }
+
+  .product-detail-row span {
+    @apply w-full;
+  }
+
+  .order-head,
+  .cart-item-head {
+    @apply flex-wrap;
   }
 
   .auth-card,

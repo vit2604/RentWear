@@ -112,6 +112,9 @@ export default function ProductDetail() {
   ]);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isMobileView, setIsMobileView] = useState(() =>
+    window.matchMedia("(max-width: 992px)").matches
+  );
 
   const rentalOptionsRef = useRef(null);
 
@@ -124,6 +127,19 @@ export default function ProductDetail() {
       setTimeout(scrollToRental, 120);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 992px)");
+    const onChange = (event) => setIsMobileView(event.matches);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", onChange);
+      return () => mediaQuery.removeEventListener("change", onChange);
+    }
+
+    mediaQuery.addListener(onChange);
+    return () => mediaQuery.removeListener(onChange);
+  }, []);
 
   const startDateObj = range[0].startDate;
   const endDateObj = range[0].endDate;
@@ -324,8 +340,12 @@ export default function ProductDetail() {
         </button>
 
         <section className="card">
-          <div className="product-layout !grid-cols-[320px_1fr] !items-start">
-            <img src={product.image} alt={product.name} className="product-image !h-[420px] rounded-[12px]" />
+          <div className="product-layout items-start">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="product-image h-[280px] rounded-[12px] sm:h-[360px] lg:h-[420px]"
+            />
 
             <div ref={rentalOptionsRef} className="stack scroll-anchor">
               <div>
@@ -350,16 +370,17 @@ export default function ProductDetail() {
               <article className="rounded-xl border border-line bg-[#fbf8f2] p-3">
                 <h3 className="!mb-2 !mt-0 text-base">Chọn lịch thuê thông minh</h3>
 
-                <div className="overflow-x-auto">
-                  <DateRange
-                    ranges={range}
-                    onChange={handleRangeChange}
-                    minDate={startOfDay(new Date())}
-                    disabledDates={disabledDates}
-                    moveRangeOnFirstSelection={false}
-                    rangeColors={["#8d5f31"]}
-                  />
-                </div>
+                <DateRange
+                  ranges={range}
+                  onChange={handleRangeChange}
+                  minDate={startOfDay(new Date())}
+                  disabledDates={disabledDates}
+                  moveRangeOnFirstSelection={false}
+                  months={isMobileView ? 1 : 2}
+                  direction={isMobileView ? "vertical" : "horizontal"}
+                  showDateDisplay={!isMobileView}
+                  rangeColors={["#8d5f31"]}
+                />
 
                 <div className="mt-2 flex flex-wrap gap-2">
                   {[1, 2, 3, 5].map((days) => (
