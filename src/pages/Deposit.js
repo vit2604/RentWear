@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../components/MainLayout";
 import FlowSteps from "../components/FlowSteps";
@@ -13,6 +13,11 @@ const paymentMethods = [
   { id: "momo", name: "Ví MoMo", icon: "MOMO" },
   { id: "cod", name: "Tiền mặt khi nhận", icon: "COD" }
 ];
+
+const resolvePayOSOrderId = (data) => {
+  if (!data) return "";
+  return String(data.orderCode || data.id || data.paymentLinkId || "").trim();
+};
 
 const buildQrImageUrl = (payOSData) => {
   const qrPayload = payOSData?.qrCode || payOSData?.checkoutUrl || "";
@@ -30,11 +35,12 @@ export default function Deposit() {
   const [errorMessage, setErrorMessage] = useState("");
   const [loadingPayOS, setLoadingPayOS] = useState(false);
   const [payOSData, setPayOSData] = useState(null);
+  const [checkingPayOSStatus, setCheckingPayOSStatus] = useState(false);
 
   const methodsRef = useRef(null);
   const bankInfoRef = useRef(null);
   const payOSInfoRef = useRef(null);
-  const payOSReturnHandledRef = useRef(false);
+  const payOSCompletedRef = useRef(false);
   const transferCodeRef = useRef(`RENTWEAR-${Date.now().toString().slice(-6)}`);
 
   const isCompactView = () => window.matchMedia("(max-width: 992px)").matches;
@@ -43,6 +49,24 @@ export default function Deposit() {
     if (!ref?.current) return;
     ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  const completePayOSOrder = useCallback(() => {
+    if (payOSCompletedRef.current) {
+      return;
+    }
+
+    payOSCompletedRef.current = true;
+
+    const order = placeOrder({ paymentMethod: "payos" });
+
+    if (!order) {
+      setErrorMessage("Không tạo được đơn hàng sau khi xác nhận thanh toán PayOS.");
+      payOSCompletedRef.current = false;
+      return;
+    }
+
+    navigate("/orders", { state: { orderId: order.id } });
+  }, [navigate, placeOrder]);
 
   useEffect(() => {
     if (location.state?.focus === "methods") {
@@ -57,6 +81,8 @@ export default function Deposit() {
 
     if (selectedMethod !== "payos") {
       setPayOSData(null);
+      setCheckingPayOSStatus(false);
+      payOSCompletedRef.current = false;
     }
   }, [selectedMethod]);
 
@@ -66,34 +92,78 @@ export default function Deposit() {
   }, [payOSData]);
 
   useEffect(() => {
-    if (!booking || payOSReturnHandledRef.current) return;
+    if (!booking || payOSCompletedRef.current) return;
 
     const params = new URLSearchParams(location.search);
     const status = String(params.get("status") || "").toUpperCase();
     const code = String(params.get("code") || "");
     const isCancel = String(params.get("cancel") || "").toLowerCase() === "true";
 
-    if (!status && !code && !isCancel) {
-      return;
-    }
+    if (!status && !code && !isCancel) return;
 
     if (status === "PAID" || (code === "00" && !isCancel)) {
-      payOSReturnHandledRef.current = true;
-      const order = placeOrder({ paymentMethod: "payos" });
-
-      if (!order) {
-        setErrorMessage("Không tạo được đơn hàng sau khi nhận kết quả thanh toán PayOS.");
-        return;
-      }
-
-      navigate("/orders", { state: { orderId: order.id } });
+      completePayOSOrder();
       return;
     }
 
     if (isCancel || status === "CANCELLED") {
       setErrorMessage("Bạn đã hủy thanh toán PayOS. Vui lòng thử lại khi sẵn sàng.");
     }
-  }, [booking, location.search, navigate, placeOrder]);
+  }, [booking, completePayOSOrder, location.search]);
+
+  useEffect(() => {
+    if (!booking || selectedMethod !== "payos" || !payOSData || payOSCompletedRef.current) {
+      return undefined;
+    }
+
+    const orderId = resolvePayOSOrderId(payOSData);
+    if (!orderId) {
+      return undefined;
+    }
+
+    let isUnmounted = false;
+
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(apiUrl(`/payments/payos/status/${encodeURIComponent(orderId)}`));
+        const result = await response.json();
+
+        if (!response.ok) {
+          return;
+        }
+
+        const currentStatus = String(result?.data?.status || "").toUpperCase();
+
+        if (currentStatus === "PAID") {
+          if (!isUnmounted) {
+            setCheckingPayOSStatus(false);
+            completePayOSOrder();
+          }
+          return;
+        }
+
+        if (currentStatus === "CANCELLED") {
+          if (!isUnmounted) {
+            setCheckingPayOSStatus(false);
+            setErrorMessage("Thanh toán PayOS đã bị hủy.");
+          }
+        }
+      } catch (error) {
+        // Bỏ qua lỗi mạng tạm thời để lần polling sau kiểm tra lại.
+      }
+    };
+
+    setCheckingPayOSStatus(true);
+    checkStatus();
+
+    const timer = setInterval(checkStatus, 3000);
+
+    return () => {
+      isUnmounted = true;
+      clearInterval(timer);
+      setCheckingPayOSStatus(false);
+    };
+  }, [booking, completePayOSOrder, payOSData, selectedMethod]);
 
   const totalItems = useMemo(
     () => booking?.items?.reduce((total, item) => total + item.quantity, 0) || 0,
@@ -116,6 +186,7 @@ export default function Deposit() {
       try {
         setLoadingPayOS(true);
         setPayOSData(null);
+        payOSCompletedRef.current = false;
 
         const response = await fetch(apiUrl("/payments/payos/create"), {
           method: "POST",
@@ -135,7 +206,12 @@ export default function Deposit() {
           return;
         }
 
-        setPayOSData(result?.data || null);
+        if (!result?.data) {
+          setErrorMessage("PayOS chưa trả về dữ liệu thanh toán.");
+          return;
+        }
+
+        setPayOSData(result.data);
         return;
       } catch (error) {
         setErrorMessage(`Lỗi kết nối PayOS: ${error.message || "Không rõ nguyên nhân."}`);
@@ -295,6 +371,12 @@ export default function Deposit() {
                     Mở trang thanh toán PayOS
                   </a>
                 ) : null}
+
+                <p className="meta-text !mt-2">
+                  {checkingPayOSStatus
+                    ? "Hệ thống đang tự kiểm tra trạng thái thanh toán..."
+                    : "Hệ thống sẽ tự chuyển sang đã xác nhận ngay khi PayOS báo PAID."}
+                </p>
               </article>
             ) : null}
           </section>

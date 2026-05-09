@@ -23,14 +23,7 @@ const defaultProductForm = {
 
 export default function Product() {
   const navigate = useNavigate();
-  const {
-    addProduct,
-    isAdmin,
-    products,
-    updateProduct,
-    setBooking,
-    setCheckoutItems
-  } = useAppContext();
+  const { addProduct, isAdmin, products, updateProduct, setBooking, setCheckoutItems } = useAppContext();
 
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -43,10 +36,33 @@ export default function Product() {
   const [form, setForm] = useState(defaultProductForm);
   const [formError, setFormError] = useState("");
 
+  const [isMobileView, setIsMobileView] = useState(() =>
+    window.matchMedia("(max-width: 992px)").matches
+  );
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 250);
     return () => clearTimeout(timer);
   }, [query]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 992px)");
+    const onChange = (event) => {
+      setIsMobileView(event.matches);
+      if (!event.matches) {
+        setIsMobileFilterOpen(false);
+      }
+    };
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", onChange);
+      return () => mediaQuery.removeEventListener("change", onChange);
+    }
+
+    mediaQuery.addListener(onChange);
+    return () => mediaQuery.removeListener(onChange);
+  }, []);
 
   const categories = useMemo(
     () => ["all", ...new Set(products.map((product) => product.category))],
@@ -71,6 +87,14 @@ export default function Product() {
       return matchesQuery && matchesCategory && matchesStatus && matchesSize;
     });
   }, [category, debouncedQuery, products, sizeFilter, status]);
+
+  const resetFilter = () => {
+    setQuery("");
+    setDebouncedQuery("");
+    setCategory("all");
+    setSizeFilter("all");
+    setStatus("all");
+  };
 
   const resetForm = () => {
     setForm(defaultProductForm);
@@ -166,87 +190,99 @@ export default function Product() {
     navigate("/payment", { state: { focus: "methods" } });
   };
 
+  const renderFilterFields = () => (
+    <>
+      <label htmlFor="search" className="label-text">
+        Tìm kiếm
+      </label>
+      <input
+        id="search"
+        type="text"
+        className="input"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder="Nhập tên sản phẩm"
+      />
+
+      <label htmlFor="category" className="label-text">
+        Danh mục
+      </label>
+      <select id="category" className="input" value={category} onChange={(event) => setCategory(event.target.value)}>
+        {categories.map((item) => (
+          <option key={item} value={item}>
+            {item === "all" ? "Tất cả" : item}
+          </option>
+        ))}
+      </select>
+
+      <label htmlFor="size" className="label-text">
+        Size
+      </label>
+      <select id="size" className="input" value={sizeFilter} onChange={(event) => setSizeFilter(event.target.value)}>
+        <option value="all">Tất cả</option>
+        <option value="S">S</option>
+        <option value="M">M</option>
+        <option value="L">L</option>
+        <option value="XL">XL</option>
+      </select>
+
+      <label htmlFor="status" className="label-text">
+        Tình trạng
+      </label>
+      <select id="status" className="input" value={status} onChange={(event) => setStatus(event.target.value)}>
+        <option value="all">Tất cả</option>
+        <option value="available">Sẵn hàng</option>
+        <option value="unavailable">Tạm hết</option>
+      </select>
+
+      <button type="button" className="btn-secondary" onClick={resetFilter}>
+        Đặt lại bộ lọc
+      </button>
+    </>
+  );
+
   return (
     <MainLayout>
       <section className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="section-heading section-heading-left !mb-0">
           <h2>Danh sách sản phẩm</h2>
-          <p>Lọc theo tên, danh mục, size, giá và tình trạng.</p>
+          <p>Lọc theo tên, danh mục, size và tình trạng.</p>
         </div>
 
-        {isAdmin ? (
-          <button
-            type="button"
-            onClick={openCreateProduct}
-            className="mt-2 inline-flex h-11 w-11 items-center justify-center rounded-full bg-brand text-2xl font-semibold text-white shadow transition hover:scale-105 hover:bg-brand-hover"
-            title="Thêm sản phẩm"
-            aria-label="Thêm sản phẩm"
-          >
-            +
-          </button>
-        ) : null}
+        <div className="mt-2 flex items-center gap-2">
+          {isMobileView ? (
+            <button
+              type="button"
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink md:hidden"
+              onClick={() => setIsMobileFilterOpen(true)}
+              aria-label="Mở bộ lọc sản phẩm"
+            >
+              <span aria-hidden="true">☰</span>
+              <span>Bộ lọc</span>
+            </button>
+          ) : null}
+
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={openCreateProduct}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-brand text-2xl font-semibold text-white shadow transition hover:scale-105 hover:bg-brand-hover"
+              title="Thêm sản phẩm"
+              aria-label="Thêm sản phẩm"
+            >
+              +
+            </button>
+          ) : null}
+        </div>
       </section>
 
       <div className="product-layout">
-        <aside className="card filter-card">
-          <h3>Bộ lọc</h3>
-
-          <label htmlFor="search" className="label-text">
-            Tìm kiếm
-          </label>
-          <input
-            id="search"
-            type="text"
-            className="input"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Nhập tên sản phẩm"
-          />
-
-          <label htmlFor="category" className="label-text">
-            Danh mục
-          </label>
-          <select id="category" className="input" value={category} onChange={(event) => setCategory(event.target.value)}>
-            {categories.map((item) => (
-              <option key={item} value={item}>
-                {item === "all" ? "Tất cả" : item}
-              </option>
-            ))}
-          </select>
-
-          <label htmlFor="size" className="label-text">
-            Size
-          </label>
-          <select id="size" className="input" value={sizeFilter} onChange={(event) => setSizeFilter(event.target.value)}>
-            <option value="all">Tất cả</option>
-            <option value="S">S</option>
-            <option value="M">M</option>
-            <option value="L">L</option>
-            <option value="XL">XL</option>
-          </select>
-
-          <label htmlFor="status" className="label-text">
-            Tình trạng
-          </label>
-          <select id="status" className="input" value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="all">Tất cả</option>
-            <option value="available">Sẵn hàng</option>
-            <option value="unavailable">Tạm hết</option>
-          </select>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => {
-              setQuery("");
-              setDebouncedQuery("");
-              setCategory("all");
-              setSizeFilter("all");
-              setStatus("all");
-            }}
-          >
-            Đặt lại bộ lọc
-          </button>
-        </aside>
+        {!isMobileView ? (
+          <aside className="card filter-card">
+            <h3>Bộ lọc</h3>
+            {renderFilterFields()}
+          </aside>
+        ) : null}
 
         <div className="product-content">
           <p className="meta-text">Tìm thấy {filteredProducts.length} sản phẩm phù hợp.</p>
@@ -291,6 +327,29 @@ export default function Product() {
           ) : null}
         </div>
       </div>
+
+      {isMobileView && isMobileFilterOpen ? (
+        <div
+          className="fixed inset-0 z-[90] bg-black/40 px-3 py-4 md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Bộ lọc sản phẩm"
+          onClick={() => setIsMobileFilterOpen(false)}
+        >
+          <aside
+            className="ml-auto h-full w-[min(360px,92vw)] overflow-y-auto rounded-2xl border border-line bg-white p-4 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-1.5 flex items-center justify-between">
+              <h3 className="m-0 text-lg">Bộ lọc sản phẩm</h3>
+              <button type="button" className="btn-link" onClick={() => setIsMobileFilterOpen(false)}>
+                Đóng
+              </button>
+            </div>
+            {renderFilterFields()}
+          </aside>
+        </div>
+      ) : null}
 
       {openForm ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/35 px-3">

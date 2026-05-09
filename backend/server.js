@@ -36,6 +36,9 @@ const MESSAGES = {
   INVALID_PAYMENT_AMOUNT: "Số tiền thanh toán không hợp lệ.",
   PAYOS_CREATE_SUCCESS: "Tạo thanh toán PayOS thành công.",
   PAYOS_CREATE_FAILED: "Không tạo được thanh toán PayOS.",
+  PAYOS_STATUS_SUCCESS: "Lay trang thai thanh toan PayOS thanh cong.",
+  PAYOS_STATUS_FAILED: "Khong lay duoc trang thai thanh toan PayOS.",
+  PAYOS_STATUS_ID_INVALID: "Thieu ma thanh toan PayOS de kiem tra.",
   EMAIL_PASSWORD_REQUIRED: "Email và mật khẩu là bắt buộc.",
   EMAIL_ALREADY_EXISTS: "Email đã tồn tại.",
   REGISTER_SUCCESS: "Đăng ký thành công.",
@@ -175,6 +178,15 @@ const callPayOS = ({ path, method = "POST", payload = null }) =>
   new Promise((resolve, reject) => {
     const body = payload ? JSON.stringify(payload) : "";
     const url = new URL(`${PAYOS_BASE_URL}${path}`);
+    const headers = {
+      "x-client-id": PAYOS_CLIENT_ID,
+      "x-api-key": PAYOS_API_KEY
+    };
+
+    if (body) {
+      headers["Content-Type"] = "application/json";
+      headers["Content-Length"] = Buffer.byteLength(body);
+    }
 
     const req = https.request(
       {
@@ -182,12 +194,7 @@ const callPayOS = ({ path, method = "POST", payload = null }) =>
         path: url.pathname + (url.search || ""),
         port: 443,
         method,
-        headers: {
-          "x-client-id": PAYOS_CLIENT_ID,
-          "x-api-key": PAYOS_API_KEY,
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(body)
-        }
+        headers
       },
       (res) => {
         let raw = "";
@@ -303,6 +310,42 @@ app.post("/payments/payos/create", async (req, res) => {
     console.error("[PAYOS_CREATE_ERROR]", error);
     return res.status(502).json({
       message: MESSAGES.PAYOS_CREATE_FAILED,
+      error
+    });
+  }
+});
+
+
+app.get("/payments/payos/status/:id", async (req, res) => {
+  if (!isPayOSConfigured()) {
+    return res.status(503).json({
+      message: MESSAGES.PAYOS_CONFIG_MISSING
+    });
+  }
+
+  const id = String(req.params?.id || "").trim();
+
+  if (!id) {
+    return res.status(400).json({
+      message: MESSAGES.PAYOS_STATUS_ID_INVALID
+    });
+  }
+
+  try {
+    const payOSResponse = await callPayOS({
+      path: `/v2/payment-requests/${encodeURIComponent(id)}`,
+      method: "GET"
+    });
+
+    return res.status(200).json({
+      message: MESSAGES.PAYOS_STATUS_SUCCESS,
+      data: payOSResponse?.data || null,
+      raw: payOSResponse
+    });
+  } catch (error) {
+    console.error("[PAYOS_STATUS_ERROR]", error);
+    return res.status(502).json({
+      message: MESSAGES.PAYOS_STATUS_FAILED,
       error
     });
   }
