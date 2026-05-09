@@ -22,11 +22,10 @@ export default function Deposit() {
   const [selectedMethod, setSelectedMethod] = useState(paymentMethods[0].id);
   const [errorMessage, setErrorMessage] = useState("");
   const [loadingPayOS, setLoadingPayOS] = useState(false);
-  const [payOSData, setPayOSData] = useState(null);
 
   const methodsRef = useRef(null);
   const bankInfoRef = useRef(null);
-  const payOSInfoRef = useRef(null);
+  const transferCodeRef = useRef(`RENTWEAR-${Date.now().toString().slice(-6)}`);
 
   const isCompactView = () => window.matchMedia("(max-width: 992px)").matches;
 
@@ -42,11 +41,6 @@ export default function Deposit() {
   }, [location.state]);
 
   useEffect(() => {
-    if (!payOSData) return;
-    setTimeout(() => scrollToSection(payOSInfoRef), 120);
-  }, [payOSData]);
-
-  useEffect(() => {
     if (selectedMethod === "bank") {
       setTimeout(() => scrollToSection(bankInfoRef), 120);
     }
@@ -56,17 +50,6 @@ export default function Deposit() {
     () => booking?.items?.reduce((total, item) => total + item.quantity, 0) || 0,
     [booking]
   );
-
-  const handleConfirmPayOSDone = () => {
-    const order = placeOrder({ paymentMethod: "payos" });
-
-    if (!order) {
-      setErrorMessage("Không tạo được đơn hàng sau bước thanh toán.");
-      return;
-    }
-
-    navigate("/orders", { state: { orderId: order.id } });
-  };
 
   const handleConfirmPayment = async () => {
     if (!booking) {
@@ -83,7 +66,6 @@ export default function Deposit() {
     if (selectedMethod === "payos") {
       try {
         setLoadingPayOS(true);
-        setPayOSData(null);
 
         const response = await fetch(apiUrl("/payments/payos/create"), {
           method: "POST",
@@ -92,7 +74,7 @@ export default function Deposit() {
           },
           body: JSON.stringify({
             amount: booking.total,
-            description: `RENTWEAR-${Date.now().toString().slice(-6)}`
+            description: transferCodeRef.current
           })
         });
 
@@ -103,7 +85,19 @@ export default function Deposit() {
           return;
         }
 
-        setPayOSData(result?.data || null);
+        const order = placeOrder({ paymentMethod: "payos" });
+
+        if (!order) {
+          setErrorMessage("Không tạo được đơn hàng sau khi lấy mã thanh toán.");
+          return;
+        }
+
+        navigate("/orders", {
+          state: {
+            orderId: order.id,
+            paymentStatus: "paid"
+          }
+        });
         return;
       } catch (error) {
         setErrorMessage(`Lỗi kết nối PayOS: ${error.message || "Không rõ nguyên nhân."}`);
@@ -217,44 +211,8 @@ export default function Deposit() {
                 </div>
                 <div className="summary-row">
                   <span>Nội dung</span>
-                  <span>RENTWEAR-{Date.now().toString().slice(-6)}</span>
+                  <span>{transferCodeRef.current}</span>
                 </div>
-              </article>
-            ) : null}
-
-            {payOSData ? (
-              <article ref={payOSInfoRef} className="card scroll-anchor">
-                <h3>Thông tin chuyển khoản PayOS</h3>
-                <div className="summary-row">
-                  <span>Ngân hàng (BIN)</span>
-                  <span>{payOSData.bin || "--"}</span>
-                </div>
-                <div className="summary-row">
-                  <span>Số tài khoản</span>
-                  <span>{payOSData.accountNumber || "--"}</span>
-                </div>
-                <div className="summary-row">
-                  <span>Chủ tài khoản</span>
-                  <span>{payOSData.accountName || "--"}</span>
-                </div>
-                <div className="summary-row">
-                  <span>Số tiền</span>
-                  <span>{formatCurrency(payOSData.amount || booking.total)}</span>
-                </div>
-                <div className="summary-row">
-                  <span>Nội dung</span>
-                  <span>{payOSData.description || "--"}</span>
-                </div>
-
-                {payOSData.checkoutUrl ? (
-                  <a className="btn-secondary !mt-2" href={payOSData.checkoutUrl} target="_blank" rel="noreferrer">
-                    Mở trang thanh toán PayOS
-                  </a>
-                ) : null}
-
-                <button type="button" className="btn-primary !mt-2" onClick={handleConfirmPayOSDone}>
-                  Tôi đã thanh toán xong
-                </button>
               </article>
             ) : null}
           </section>
@@ -295,7 +253,11 @@ export default function Deposit() {
             {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
             <button type="button" className="btn-primary" onClick={handleConfirmPayment} disabled={loadingPayOS}>
-              {loadingPayOS ? "ĐANG TẠO THANH TOÁN..." : "XÁC NHẬN THANH TOÁN"}
+              {loadingPayOS
+                ? "ĐANG TẠO THANH TOÁN..."
+                : selectedMethod === "payos"
+                  ? "LẤY MÃ THANH TOÁN"
+                  : "XÁC NHẬN THANH TOÁN"}
             </button>
           </aside>
 
@@ -311,7 +273,7 @@ export default function Deposit() {
                 onClick={handleConfirmPayment}
                 disabled={loadingPayOS}
               >
-                {loadingPayOS ? "Đang xử lý" : "Xác nhận"}
+                {loadingPayOS ? "Đang xử lý" : selectedMethod === "payos" ? "Lấy mã" : "Xác nhận"}
               </button>
             </div>
           </div>
