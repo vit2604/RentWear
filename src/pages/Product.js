@@ -37,8 +37,6 @@ export default function Product() {
   const [category, setCategory] = useState("all");
   const [sizeFilter, setSizeFilter] = useState("all");
   const [status, setStatus] = useState("all");
-  const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(500000);
 
   const [openForm, setOpenForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState("");
@@ -69,11 +67,10 @@ export default function Product() {
       const matchesCategory = category === "all" || product.category === category;
       const matchesStatus = status === "all" || currentStatus === status;
       const matchesSize = sizeFilter === "all" || product.sizeOptions.includes(sizeFilter);
-      const matchesPrice = product.pricePerDay >= minPrice && product.pricePerDay <= maxPrice;
 
-      return matchesQuery && matchesCategory && matchesStatus && matchesSize && matchesPrice;
+      return matchesQuery && matchesCategory && matchesStatus && matchesSize;
     });
-  }, [category, debouncedQuery, maxPrice, minPrice, products, sizeFilter, status]);
+  }, [category, debouncedQuery, products, sizeFilter, status]);
 
   const resetForm = () => {
     setForm(defaultProductForm);
@@ -236,25 +233,6 @@ export default function Product() {
             <option value="available">Sẵn hàng</option>
             <option value="unavailable">Tạm hết</option>
           </select>
-
-          <label className="label-text">
-            Giá: {formatCurrency(minPrice)} - {formatCurrency(maxPrice)}
-          </label>
-          <input
-            type="range"
-            min={0}
-            max={500000}
-            value={minPrice}
-            onChange={(event) => setMinPrice(Number(event.target.value))}
-          />
-          <input
-            type="range"
-            min={0}
-            max={500000}
-            value={maxPrice}
-            onChange={(event) => setMaxPrice(Number(event.target.value))}
-          />
-
           <button
             type="button"
             className="btn-secondary"
@@ -264,8 +242,6 @@ export default function Product() {
               setCategory("all");
               setSizeFilter("all");
               setStatus("all");
-              setMinPrice(0);
-              setMaxPrice(500000);
             }}
           >
             Đặt lại bộ lọc
