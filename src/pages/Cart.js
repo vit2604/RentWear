@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "../components/MainLayout";
+import FlowSteps from "../components/FlowSteps";
 import { useAppContext } from "../context/AppContext";
 import { getProductById, getRealtimeStatus } from "../data/products";
 import { formatCurrency } from "../utils/format";
@@ -18,6 +19,7 @@ export default function Cart() {
 
   const [selectedMap, setSelectedMap] = useState({});
   const [errorMessage, setErrorMessage] = useState("");
+  const summaryRef = useRef(null);
 
   useEffect(() => {
     setSelectedMap((previous) => {
@@ -38,15 +40,11 @@ export default function Cart() {
   );
 
   const subtotal = useMemo(
-    () =>
-      selectedItems.reduce(
-        (total, item) => total + item.pricePerDay * item.quantity,
-        0
-      ),
+    () => selectedItems.reduce((total, item) => total + item.pricePerDay * item.quantity, 0),
     [selectedItems]
   );
 
-  const shippingFee = subtotal > 0 ? 0 : 0;
+  const shippingFee = 0;
   const discount = subtotal >= 250000 ? 10000 : 0;
   const total = subtotal + shippingFee - discount;
 
@@ -61,6 +59,7 @@ export default function Cart() {
   const handleCheckout = () => {
     if (!selectedItems.length) {
       setErrorMessage("Bạn cần chọn ít nhất 1 sản phẩm để tiếp tục đặt lịch.");
+      summaryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
 
@@ -76,6 +75,8 @@ export default function Cart() {
         <p>Chỉnh sửa số lượng hoặc xóa bớt sản phẩm trước khi đặt lịch thuê.</p>
       </section>
 
+      <FlowSteps current="cart" />
+
       {cart.length === 0 ? (
         <div className="card empty-state">
           <p>Giỏ hàng đang trống.</p>
@@ -84,7 +85,7 @@ export default function Cart() {
           </Link>
         </div>
       ) : (
-        <div className="page-grid">
+        <div className="page-grid has-mobile-sticky">
           <section className="stack">
             {cart.map((item) => {
               const key = getItemKey(item);
@@ -118,26 +119,14 @@ export default function Cart() {
                     <div className="qty-control">
                       <button
                         type="button"
-                        onClick={() =>
-                          updateCartItemQuantity(
-                            item.productId,
-                            item.size,
-                            item.quantity - 1
-                          )
-                        }
+                        onClick={() => updateCartItemQuantity(item.productId, item.size, item.quantity - 1)}
                       >
                         -
                       </button>
                       <span>{item.quantity}</span>
                       <button
                         type="button"
-                        onClick={() =>
-                          updateCartItemQuantity(
-                            item.productId,
-                            item.size,
-                            item.quantity + 1
-                          )
-                        }
+                        onClick={() => updateCartItemQuantity(item.productId, item.size, item.quantity + 1)}
                       >
                         +
                       </button>
@@ -160,7 +149,7 @@ export default function Cart() {
             </Link>
           </section>
 
-          <aside className="card summary-card">
+          <aside ref={summaryRef} className="card summary-card scroll-anchor">
             <h3>Tạm tính ({selectedItems.length} sản phẩm)</h3>
             <div className="summary-row">
               <span>Phí giao hàng</span>
@@ -185,6 +174,18 @@ export default function Cart() {
               ĐẶT NGAY
             </button>
           </aside>
+
+          <div className="mobile-sticky-action" role="region" aria-label="Tóm tắt giỏ hàng">
+            <div className="mobile-sticky-action-row">
+              <div className="mobile-sticky-meta">
+                <span className="mobile-sticky-label">Tổng thanh toán</span>
+                <strong className="mobile-sticky-value">{formatCurrency(total)}</strong>
+              </div>
+              <button type="button" className="btn-primary mobile-sticky-button" onClick={handleCheckout}>
+                Đặt lịch
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </MainLayout>

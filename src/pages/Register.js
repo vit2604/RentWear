@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import MainLayout from "../components/MainLayout";
@@ -13,11 +13,21 @@ export default function Register() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const isDisabled = useMemo(
+    () => submitting || !email.trim() || !password || !confirmPassword,
+    [confirmPassword, email, password, submitting]
+  );
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!email || !password || !confirmPassword) {
       setErrorMessage("Vui lòng nhập đầy đủ thông tin.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMessage("Mật khẩu cần ít nhất 6 ký tự.");
       return;
     }
 
@@ -46,7 +56,7 @@ export default function Register() {
   return (
     <MainLayout>
       <section className="auth-page">
-        <form className="card auth-card" onSubmit={handleSubmit}>
+        <form className="card auth-card" onSubmit={handleSubmit} noValidate>
           <h2>Tạo tài khoản mới</h2>
           <p>Tạo tài khoản để lưu địa chỉ giao nhận và lịch sử đơn thuê.</p>
 
@@ -60,6 +70,7 @@ export default function Register() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="you@example.com"
+            autoComplete="email"
           />
 
           <label htmlFor="register-password" className="label-text">
@@ -72,6 +83,7 @@ export default function Register() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Nhập mật khẩu"
+            autoComplete="new-password"
           />
 
           <label htmlFor="register-confirm" className="label-text">
@@ -84,11 +96,12 @@ export default function Register() {
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
             placeholder="Nhập lại mật khẩu"
+            autoComplete="new-password"
           />
 
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
-          <button type="submit" className="btn-primary" disabled={submitting}>
+          <button type="submit" className="btn-primary" disabled={isDisabled}>
             {submitting ? "Đang xử lý..." : "Đăng ký"}
           </button>
 

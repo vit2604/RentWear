@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import MainLayout from "../components/MainLayout";
+import FlowSteps from "../components/FlowSteps";
 import { useAppContext } from "../context/AppContext";
 import { formatCurrency, formatDate } from "../utils/format";
 
@@ -27,6 +28,7 @@ export default function Orders() {
   if (!orders.length) {
     return (
       <MainLayout>
+        <FlowSteps current="done" />
         <div className="card empty-state">
           <p>Bạn chưa có đơn thuê nào.</p>
           <Link to="/product" className="btn-primary inline-btn">
@@ -41,8 +43,10 @@ export default function Orders() {
     <MainLayout>
       <section className="section-heading section-heading-left">
         <h2>Xác nhận đơn hàng</h2>
-        <p>Hệ thống đã ghi nhận thanh toán và đang chuẩn bị trang phục cho bạn.</p>
+        <p>Hệ thống đã ghi nhận và đang chuẩn bị trang phục cho bạn.</p>
       </section>
+
+      <FlowSteps current="done" />
 
       <div className="stack">
         {orders.map((order) => (

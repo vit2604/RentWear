@@ -24,6 +24,29 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
   : true;
 
+const MESSAGES = {
+  DATABASE_NOT_READY:
+    "Backend đã chạy nhưng chưa kết nối MongoDB. Vui lòng bật MongoDB hoặc kiểm tra MONGO_URI.",
+  TOKEN_MISSING: "Thiếu token xác thực.",
+  TOKEN_INVALID: "Token không hợp lệ.",
+  ACCESS_DENIED: "Không có quyền truy cập.",
+  PAYOS_PARSE_ERROR: "Không parse được phản hồi từ PayOS.",
+  PAYOS_CONFIG_MISSING:
+    "Thiếu cấu hình PayOS trên backend (PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY).",
+  INVALID_PAYMENT_AMOUNT: "Số tiền thanh toán không hợp lệ.",
+  PAYOS_CREATE_SUCCESS: "Tạo thanh toán PayOS thành công.",
+  PAYOS_CREATE_FAILED: "Không tạo được thanh toán PayOS.",
+  EMAIL_PASSWORD_REQUIRED: "Email và mật khẩu là bắt buộc.",
+  EMAIL_ALREADY_EXISTS: "Email đã tồn tại.",
+  REGISTER_SUCCESS: "Đăng ký thành công.",
+  REGISTER_FAILED: "Đăng ký thất bại.",
+  ACCOUNT_NOT_FOUND: "Không tìm thấy tài khoản.",
+  WRONG_PASSWORD: "Sai mật khẩu.",
+  LOGIN_FAILED: "Đăng nhập thất bại.",
+  PROFILE_UPDATED: "Cập nhật hồ sơ thành công.",
+  PROFILE_UPDATE_FAILED: "Cập nhật hồ sơ thất bại."
+};
+
 app.use(express.json());
 app.use(
   cors({
@@ -67,8 +90,7 @@ const isDatabaseConnected = () => mongoose.connection.readyState === 1;
 const requireDatabase = (req, res, next) => {
   if (!isDatabaseConnected()) {
     return res.status(503).json({
-      message:
-        "Backend đã chạy nhưng chưa kết nối MongoDB. Vui lòng bật MongoDB hoặc kiểm tra MONGO_URI."
+      message: MESSAGES.DATABASE_NOT_READY
     });
   }
 
@@ -112,20 +134,20 @@ const authMiddleware = async (req, res, next) => {
     const token = getTokenFromHeader(req.headers.authorization);
 
     if (!token) {
-      return res.status(401).json({ message: "Thiếu token xác thực." });
+      return res.status(401).json({ message: MESSAGES.TOKEN_MISSING });
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(401).json({ message: "Token không hợp lệ." });
+      return res.status(401).json({ message: MESSAGES.TOKEN_INVALID });
     }
 
     req.user = user;
     return next();
   } catch (error) {
-    return res.status(401).json({ message: "Không có quyền truy cập." });
+    return res.status(401).json({ message: MESSAGES.ACCESS_DENIED });
   }
 };
 
@@ -185,7 +207,7 @@ const callPayOS = ({ path, method = "POST", payload = null }) =>
 
             resolve(parsed);
           } catch (error) {
-            reject({ message: "Không parse được phản hồi từ PayOS.", raw });
+            reject({ message: MESSAGES.PAYOS_PARSE_ERROR, raw });
           }
         });
       }
@@ -203,15 +225,14 @@ const callPayOS = ({ path, method = "POST", payload = null }) =>
 app.post("/payments/payos/create", async (req, res) => {
   if (!isPayOSConfigured()) {
     return res.status(503).json({
-      message:
-        "Thiếu cấu hình PayOS trên backend (PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY)."
+      message: MESSAGES.PAYOS_CONFIG_MISSING
     });
   }
 
   try {
     const amount = Number(req.body?.amount || 0);
     if (!amount || amount <= 0) {
-      return res.status(400).json({ message: "Số tiền thanh toán không hợp lệ." });
+      return res.status(400).json({ message: MESSAGES.INVALID_PAYMENT_AMOUNT });
     }
 
     const cancelUrl =
@@ -274,14 +295,14 @@ app.post("/payments/payos/create", async (req, res) => {
     });
 
     return res.status(200).json({
-      message: "Tạo thanh toán PayOS thành công.",
+      message: MESSAGES.PAYOS_CREATE_SUCCESS,
       data: payOSResponse?.data || null,
       raw: payOSResponse
     });
   } catch (error) {
     console.error("[PAYOS_CREATE_ERROR]", error);
     return res.status(502).json({
-      message: "Không tạo được thanh toán PayOS.",
+      message: MESSAGES.PAYOS_CREATE_FAILED,
       error
     });
   }
@@ -292,14 +313,14 @@ app.post("/register", requireDatabase, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email và mật khẩu là bắt buộc." });
+      return res.status(400).json({ message: MESSAGES.EMAIL_PASSWORD_REQUIRED });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
-      return res.status(409).json({ message: "Email đã tồn tại." });
+      return res.status(409).json({ message: MESSAGES.EMAIL_ALREADY_EXISTS });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -310,10 +331,10 @@ app.post("/register", requireDatabase, async (req, res) => {
       role: resolveRoleByEmail(normalizedEmail)
     });
 
-    return res.json({ message: "Đăng ký thành công." });
+    return res.json({ message: MESSAGES.REGISTER_SUCCESS });
   } catch (error) {
     console.error("[REGISTER_ERROR]", error);
-    return res.status(500).json({ message: "Đăng ký thất bại." });
+    return res.status(500).json({ message: MESSAGES.REGISTER_FAILED });
   }
 });
 
@@ -322,14 +343,14 @@ app.post("/login", requireDatabase, async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email và mật khẩu là bắt buộc." });
+      return res.status(400).json({ message: MESSAGES.EMAIL_PASSWORD_REQUIRED });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
-      return res.status(404).json({ message: "Không tìm thấy tài khoản." });
+      return res.status(404).json({ message: MESSAGES.ACCOUNT_NOT_FOUND });
     }
 
     if (!user.role) {
@@ -340,7 +361,7 @@ app.post("/login", requireDatabase, async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Sai mật khẩu." });
+      return res.status(401).json({ message: MESSAGES.WRONG_PASSWORD });
     }
 
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
@@ -357,7 +378,7 @@ app.post("/login", requireDatabase, async (req, res) => {
     });
   } catch (error) {
     console.error("[LOGIN_ERROR]", error);
-    return res.status(500).json({ message: "Đăng nhập thất bại." });
+    return res.status(500).json({ message: MESSAGES.LOGIN_FAILED });
   }
 });
 
@@ -380,7 +401,7 @@ app.put("/profile", requireDatabase, authMiddleware, async (req, res) => {
     await req.user.save();
 
     return res.json({
-      message: "Cập nhật hồ sơ thành công.",
+      message: MESSAGES.PROFILE_UPDATED,
       user: {
         id: req.user._id,
         email: req.user.email,
@@ -391,7 +412,7 @@ app.put("/profile", requireDatabase, authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error("[PROFILE_UPDATE_ERROR]", error);
-    return res.status(500).json({ message: "Cập nhật hồ sơ thất bại." });
+    return res.status(500).json({ message: MESSAGES.PROFILE_UPDATE_FAILED });
   }
 });
 

@@ -17,10 +17,7 @@ export default function ChatWidget() {
     }
   ]);
 
-  const hint = useMemo(
-    () => quickHints[Math.floor(Math.random() * quickHints.length)],
-    []
-  );
+  const hint = useMemo(() => quickHints[Math.floor(Math.random() * quickHints.length)], []);
 
   const handleSend = () => {
     const content = input.trim();
@@ -49,17 +46,13 @@ export default function ChatWidget() {
   return (
     <>
       {open ? (
-        <section className="fixed bottom-24 right-5 z-[90] w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-line bg-white shadow-xl">
+        <section className="chat-widget-panel fixed right-5 z-[90] w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-line bg-white shadow-xl">
           <header className="flex items-center justify-between border-b border-line bg-[#f6f1e8] px-4 py-3">
             <div>
               <h3 className="m-0 text-sm font-semibold">Hỗ trợ nhanh</h3>
               <p className="m-0 text-xs text-muted">Khung chat RentWear</p>
             </div>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="btn-link text-sm"
-            >
+            <button type="button" onClick={() => setOpen(false)} className="btn-link text-sm">
               Đóng
             </button>
           </header>
@@ -69,9 +62,7 @@ export default function ChatWidget() {
               <div
                 key={message.id}
                 className={`rounded-xl px-3 py-2 ${
-                  message.sender === "user"
-                    ? "ml-8 bg-brand text-white"
-                    : "mr-8 bg-[#f2eadc] text-ink"
+                  message.sender === "user" ? "ml-8 bg-brand text-white" : "mr-8 bg-[#f2eadc] text-ink"
                 }`}
               >
                 {message.content}
@@ -97,7 +88,7 @@ export default function ChatWidget() {
       <button
         type="button"
         onClick={() => setOpen((previous) => !previous)}
-        className="fixed bottom-6 right-5 z-[90] flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white shadow-lg transition hover:scale-105 hover:bg-brand-hover"
+        className="chat-widget-toggle fixed right-5 z-[90] flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white shadow-lg transition hover:scale-105 hover:bg-brand-hover"
         aria-label="Mở khung chat"
       >
         <svg

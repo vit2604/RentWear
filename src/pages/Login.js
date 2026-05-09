@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import MainLayout from "../components/MainLayout";
@@ -13,6 +13,11 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const isDisabled = useMemo(
+    () => submitting || !email.trim() || !password.trim(),
+    [email, password, submitting]
+  );
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -56,7 +61,7 @@ export default function Login() {
   return (
     <MainLayout>
       <section className="auth-page">
-        <form className="card auth-card" onSubmit={handleSubmit}>
+        <form className="card auth-card" onSubmit={handleSubmit} noValidate>
           <h2>Chào mừng trở lại</h2>
           <p>Đăng nhập để tiếp tục thuê đồ và quản lý tài khoản.</p>
 
@@ -70,6 +75,7 @@ export default function Login() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="you@example.com"
+            autoComplete="email"
           />
 
           <label htmlFor="login-password" className="label-text">
@@ -82,11 +88,12 @@ export default function Login() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Nhập mật khẩu"
+            autoComplete="current-password"
           />
 
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
-          <button type="submit" className="btn-primary" disabled={submitting}>
+          <button type="submit" className="btn-primary" disabled={isDisabled}>
             {submitting ? "Đang xử lý..." : "Đăng nhập"}
           </button>
 

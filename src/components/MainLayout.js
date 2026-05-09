@@ -16,35 +16,40 @@ export default function MainLayout({ children, withContainer = true }) {
 
   return (
     <div className="app-shell">
+      <a href="#main-content" className="skip-link">
+        Bỏ qua điều hướng
+      </a>
       <header className="top-nav">
         <div className="container top-nav-inner">
           <Link to="/" className="brand">
             RentWear
           </Link>
 
-          <nav className="top-nav-links">
-            <NavLink to="/" className={navClassName}>
-              Trang chủ
-            </NavLink>
-            <NavLink to="/product" className={navClassName}>
-              Sản phẩm
-            </NavLink>
-            <NavLink to="/cart" className={navClassName}>
-              Giỏ hàng
-              {cartCount > 0 ? <span className="cart-badge">{cartCount}</span> : null}
-            </NavLink>
-            <NavLink to="/booking" className={navClassName}>
-              Đặt lịch
-            </NavLink>
-            <NavLink to="/orders" className={navClassName}>
-              Đơn hàng
-            </NavLink>
-            {isAdmin ? (
-              <NavLink to="/admin" className={navClassName}>
-                Quản trị
+          <div className="top-nav-links-wrap">
+            <nav className="top-nav-links">
+              <NavLink to="/" className={navClassName}>
+                Trang chủ
               </NavLink>
-            ) : null}
-          </nav>
+              <NavLink to="/product" className={navClassName}>
+                Sản phẩm
+              </NavLink>
+              <NavLink to="/cart" className={navClassName}>
+                Giỏ hàng
+                {cartCount > 0 ? <span className="cart-badge">{cartCount}</span> : null}
+              </NavLink>
+              <NavLink to="/booking" className={navClassName}>
+                Đặt lịch
+              </NavLink>
+              <NavLink to="/orders" className={navClassName}>
+                Đơn hàng
+              </NavLink>
+              {isAdmin ? (
+                <NavLink to="/admin" className={navClassName}>
+                  Quản trị
+                </NavLink>
+              ) : null}
+            </nav>
+          </div>
 
           <div className="auth-quick-actions">
             {isAuthenticated ? (
@@ -71,9 +76,11 @@ export default function MainLayout({ children, withContainer = true }) {
       </header>
 
       {withContainer ? (
-        <main className="container page-content">{children}</main>
+        <main id="main-content" className="container page-content">
+          {children}
+        </main>
       ) : (
-        <main>{children}</main>
+        <main id="main-content">{children}</main>
       )}
       <ChatWidget />
     </div>

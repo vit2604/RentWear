@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { DateRange } from "react-date-range";
 import { addDays, differenceInDays, format } from "date-fns";
 import MainLayout from "../components/MainLayout";
+import FlowSteps from "../components/FlowSteps";
 import { useAppContext } from "../context/AppContext";
 import { getProductById, isDateRangeAvailable } from "../data/products";
 import { formatCurrency } from "../utils/format";
@@ -36,6 +37,14 @@ export default function Booking() {
   ]);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const customerInfoRef = useRef(null);
+  const bookingItemsRef = useRef(null);
+
+  const scrollToSection = (ref) => {
+    if (!ref?.current) return;
+    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const startDate = range[0].startDate;
   const endDate = range[0].endDate;
   const rentalDays = Math.max(differenceInDays(endDate, startDate), 1);
@@ -62,6 +71,12 @@ export default function Booking() {
   const shippingFee = 0;
   const total = subtotal + shippingFee - discount;
 
+  const handleRangeChange = (item) => {
+    setRange([item.selection]);
+    setErrorMessage("");
+    setTimeout(() => scrollToSection(customerInfoRef), 80);
+  };
+
   const handleQuickDays = (days) => {
     setQuickDay(days);
     setRange([
@@ -71,24 +86,42 @@ export default function Booking() {
         key: "selection"
       }
     ]);
-  };
-
-  const validate = () => {
-    if (!items.length) return "Chưa có sản phẩm trong giỏ.";
-    if (!name.trim()) return "Vui lòng nhập tên người nhận.";
-    if (!phone.trim()) return "Vui lòng nhập số điện thoại.";
-    if (!address.trim()) return "Vui lòng nhập địa chỉ giao nhận.";
-    if (unavailableItems.length > 0) return "Có sản phẩm bị trùng lịch.";
-
-    return "";
+    setErrorMessage("");
+    setTimeout(() => scrollToSection(customerInfoRef), 80);
   };
 
   const handleContinuePayment = () => {
-    const error = validate();
-    if (error) {
-      setErrorMessage(error);
+    if (!items.length) {
+      setErrorMessage("Chưa có sản phẩm trong giỏ.");
+      scrollToSection(bookingItemsRef);
       return;
     }
+
+    if (!name.trim()) {
+      setErrorMessage("Vui lòng nhập tên người nhận.");
+      scrollToSection(customerInfoRef);
+      return;
+    }
+
+    if (!phone.trim()) {
+      setErrorMessage("Vui lòng nhập số điện thoại.");
+      scrollToSection(customerInfoRef);
+      return;
+    }
+
+    if (!address.trim()) {
+      setErrorMessage("Vui lòng nhập địa chỉ giao nhận.");
+      scrollToSection(customerInfoRef);
+      return;
+    }
+
+    if (unavailableItems.length > 0) {
+      setErrorMessage("Có sản phẩm bị trùng lịch.");
+      scrollToSection(bookingItemsRef);
+      return;
+    }
+
+    setErrorMessage("");
 
     const startDateIso = startDate.toISOString().split("T")[0];
     const endDateIso = endDate.toISOString().split("T")[0];
@@ -110,7 +143,7 @@ export default function Booking() {
       note
     });
 
-    navigate("/payment");
+    navigate("/payment", { state: { focus: "methods" } });
   };
 
   return (
@@ -120,6 +153,8 @@ export default function Booking() {
         <p>Chọn ngày nhận, ngày trả và thông tin giao nhận.</p>
       </section>
 
+      <FlowSteps current="booking" />
+
       {items.length === 0 ? (
         <div className="card empty-state">
           <p>Chưa có sản phẩm trong giỏ.</p>
@@ -128,16 +163,12 @@ export default function Booking() {
           </Link>
         </div>
       ) : (
-        <div className="page-grid booking-grid">
+        <div className="page-grid booking-grid has-mobile-sticky">
           <section className="stack">
-            <article className="card">
+            <article className="card scroll-anchor">
               <h3>Lịch thuê</h3>
 
-              <DateRange
-                ranges={range}
-                onChange={(item) => setRange([item.selection])}
-                minDate={new Date()}
-              />
+              <DateRange ranges={range} onChange={handleRangeChange} minDate={new Date()} />
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {[1, 2, 3, 5].map((days) => (
@@ -159,7 +190,7 @@ export default function Booking() {
               </p>
             </article>
 
-            <article className="card stack compact-gap">
+            <article ref={customerInfoRef} className="card stack compact-gap scroll-anchor">
               <h3>Thông tin khách hàng</h3>
 
               <input
@@ -176,11 +207,7 @@ export default function Booking() {
                 onChange={(event) => setPhone(event.target.value)}
               />
 
-              <select
-                className="input"
-                value={address}
-                onChange={(event) => setAddress(event.target.value)}
-              >
+              <select className="input" value={address} onChange={(event) => setAddress(event.target.value)}>
                 <option value="">Chọn địa chỉ có sẵn</option>
                 {savedAddresses.map((itemAddress) => (
                   <option key={itemAddress} value={itemAddress}>
@@ -204,7 +231,7 @@ export default function Booking() {
               />
             </article>
 
-            <article className="card stack compact-gap">
+            <article ref={bookingItemsRef} className="card stack compact-gap scroll-anchor">
               {itemsWithAvailability.map((item) => (
                 <div className="booking-item" key={`${item.productId}-${item.size}`}>
                   <div>
@@ -224,7 +251,7 @@ export default function Booking() {
             </article>
           </section>
 
-          <aside className="card summary-card">
+          <aside className="card summary-card scroll-anchor">
             <h3>Chi tiết đặt lịch</h3>
 
             <div className="summary-row">
@@ -253,6 +280,18 @@ export default function Booking() {
               TIẾP TỤC THANH TOÁN
             </button>
           </aside>
+
+          <div className="mobile-sticky-action" role="region" aria-label="Tóm tắt đặt lịch">
+            <div className="mobile-sticky-action-row">
+              <div className="mobile-sticky-meta">
+                <span className="mobile-sticky-label">Tổng thanh toán</span>
+                <strong className="mobile-sticky-value">{formatCurrency(total)}</strong>
+              </div>
+              <button type="button" className="btn-primary mobile-sticky-button" onClick={handleContinuePayment}>
+                Tiếp tục
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </MainLayout>

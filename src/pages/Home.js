@@ -20,15 +20,8 @@ export default function Home() {
           <div className="container hero-content">
             <p className="hero-kicker">BỘ SƯU TẬP THUÊ CAO CẤP</p>
             <h1>Tinh Hoa Thời Trang Cho Thuê</h1>
-            <p>
-              Thuê trang phục cao cấp theo ngày, linh hoạt lịch giao nhận và tiết
-              kiệm chi phí.
-            </p>
-            <button
-              type="button"
-              className="btn-primary hero-btn"
-              onClick={() => navigate("/product")}
-            >
+            <p>Thuê trang phục cao cấp theo ngày, linh hoạt lịch giao nhận và tiết kiệm chi phí.</p>
+            <button type="button" className="btn-primary hero-btn" onClick={() => navigate("/product")}> 
               Khám phá bộ sưu tập
             </button>
           </div>
@@ -48,16 +41,19 @@ export default function Home() {
               <div className="product-info">
                 <p className="product-category">{product.category}</p>
                 <h3>{product.name}</h3>
-                <p className="product-price">
-                  {formatCurrency(product.pricePerDay)} / ngày
-                </p>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => handleAddToCart(product)}
-                >
-                  Thêm vào giỏ
-                </button>
+                <p className="product-price">{formatCurrency(product.pricePerDay)} / ngày</p>
+                <div className="button-row">
+                  <button type="button" className="btn-primary" onClick={() => handleAddToCart(product)}>
+                    Thêm vào giỏ
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => navigate(`/product/${product.id}`, { state: { focus: "rent-options" } })}
+                  >
+                    Xem chi tiết
+                  </button>
+                </div>
               </div>
             </article>
           ))}

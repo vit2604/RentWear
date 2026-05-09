@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../components/MainLayout";
+import FlowSteps from "../components/FlowSteps";
 import { useAppContext } from "../context/AppContext";
 
 export default function PaymentProcess() {
@@ -28,6 +29,7 @@ export default function PaymentProcess() {
 
   return (
     <MainLayout>
+      <FlowSteps current="payment" />
       <div className="card empty-state">
         <h3>Đang xử lý thanh toán {method.toUpperCase()}...</h3>
         <p>Hệ thống đang xác nhận giao dịch, vui lòng đợi trong giây lát.</p>

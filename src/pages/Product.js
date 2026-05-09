@@ -39,7 +39,6 @@ export default function Product() {
   const [status, setStatus] = useState("all");
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(500000);
-  const [sort, setSort] = useState("default");
 
   const [openForm, setOpenForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState("");
@@ -59,7 +58,7 @@ export default function Product() {
   const filteredProducts = useMemo(() => {
     const normalizedQuery = debouncedQuery.toLowerCase().trim();
 
-    let result = products.filter((product) => {
+    return products.filter((product) => {
       const currentStatus = getRealtimeStatus(product);
       const matchesQuery =
         !normalizedQuery ||
@@ -74,15 +73,7 @@ export default function Product() {
 
       return matchesQuery && matchesCategory && matchesStatus && matchesSize && matchesPrice;
     });
-
-    if (sort === "asc") {
-      result = [...result].sort((first, second) => first.pricePerDay - second.pricePerDay);
-    } else if (sort === "desc") {
-      result = [...result].sort((first, second) => second.pricePerDay - first.pricePerDay);
-    }
-
-    return result;
-  }, [category, debouncedQuery, maxPrice, minPrice, products, sizeFilter, sort, status]);
+  }, [category, debouncedQuery, maxPrice, minPrice, products, sizeFilter, status]);
 
   const resetForm = () => {
     setForm(defaultProductForm);
@@ -175,7 +166,7 @@ export default function Product() {
       note: ""
     });
 
-    navigate("/payment");
+    navigate("/payment", { state: { focus: "methods" } });
   };
 
   return (
@@ -218,12 +209,7 @@ export default function Product() {
           <label htmlFor="category" className="label-text">
             Danh mục
           </label>
-          <select
-            id="category"
-            className="input"
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-          >
+          <select id="category" className="input" value={category} onChange={(event) => setCategory(event.target.value)}>
             {categories.map((item) => (
               <option key={item} value={item}>
                 {item === "all" ? "Tất cả" : item}
@@ -234,12 +220,7 @@ export default function Product() {
           <label htmlFor="size" className="label-text">
             Size
           </label>
-          <select
-            id="size"
-            className="input"
-            value={sizeFilter}
-            onChange={(event) => setSizeFilter(event.target.value)}
-          >
+          <select id="size" className="input" value={sizeFilter} onChange={(event) => setSizeFilter(event.target.value)}>
             <option value="all">Tất cả</option>
             <option value="S">S</option>
             <option value="M">M</option>
@@ -250,18 +231,15 @@ export default function Product() {
           <label htmlFor="status" className="label-text">
             Tình trạng
           </label>
-          <select
-            id="status"
-            className="input"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
+          <select id="status" className="input" value={status} onChange={(event) => setStatus(event.target.value)}>
             <option value="all">Tất cả</option>
             <option value="available">Sẵn hàng</option>
             <option value="unavailable">Tạm hết</option>
           </select>
 
-          <label className="label-text">Giá: {formatCurrency(minPrice)} - {formatCurrency(maxPrice)}</label>
+          <label className="label-text">
+            Giá: {formatCurrency(minPrice)} - {formatCurrency(maxPrice)}
+          </label>
           <input
             type="range"
             min={0}
@@ -277,20 +255,6 @@ export default function Product() {
             onChange={(event) => setMaxPrice(Number(event.target.value))}
           />
 
-          <label htmlFor="sort" className="label-text">
-            Sắp xếp
-          </label>
-          <select
-            id="sort"
-            className="input"
-            value={sort}
-            onChange={(event) => setSort(event.target.value)}
-          >
-            <option value="default">Mặc định</option>
-            <option value="asc">Giá tăng dần</option>
-            <option value="desc">Giá giảm dần</option>
-          </select>
-
           <button
             type="button"
             className="btn-secondary"
@@ -302,7 +266,6 @@ export default function Product() {
               setStatus("all");
               setMinPrice(0);
               setMaxPrice(500000);
-              setSort("default");
             }}
           >
             Đặt lại bộ lọc
@@ -310,6 +273,8 @@ export default function Product() {
         </aside>
 
         <div className="product-content">
+          <p className="meta-text">Tìm thấy {filteredProducts.length} sản phẩm phù hợp.</p>
+
           <div className="product-grid compact-grid">
             {filteredProducts.map((product) => {
               const currentStatus = getRealtimeStatus(product);
@@ -327,7 +292,11 @@ export default function Product() {
                       Thuê nhanh
                     </button>
 
-                    <button type="button" className="btn-secondary" onClick={() => navigate(`/product/${product.id}`)}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => navigate(`/product/${product.id}`, { state: { focus: "rent-options" } })}
+                    >
                       Xem chi tiết
                     </button>
 

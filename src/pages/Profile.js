@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import MainLayout from "../components/MainLayout";
 import { useAppContext } from "../context/AppContext";
@@ -16,6 +16,8 @@ export default function Profile() {
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  const canSubmit = useMemo(() => !loading && !saving, [loading, saving]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -25,9 +27,7 @@ export default function Profile() {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         const profile = response.data;
         setEmail(profile.email || "");
@@ -37,9 +37,7 @@ export default function Profile() {
       } catch (error) {
         if (isMounted) {
           setErrorMessage(
-            error.response?.data?.message ||
-              error.message ||
-              "Không tải được thông tin hồ sơ."
+            error.response?.data?.message || error.message || "Không tải được thông tin hồ sơ."
           );
         }
       } finally {
@@ -76,9 +74,7 @@ export default function Profile() {
       setStatusMessage("Cập nhật hồ sơ thành công.");
     } catch (error) {
       setErrorMessage(
-        error.response?.data?.message ||
-          error.message ||
-          "Không cập nhật được hồ sơ. Vui lòng thử lại."
+        error.response?.data?.message || error.message || "Không cập nhật được hồ sơ. Vui lòng thử lại."
       );
     } finally {
       setSaving(false);
@@ -93,20 +89,13 @@ export default function Profile() {
       </section>
 
       <form className="card profile-form" onSubmit={handleSubmit}>
-        {loading ? <p>Đang tải thông tin...</p> : null}
+        {loading ? <p className="meta-text">Đang tải thông tin...</p> : null}
 
         <div>
           <label htmlFor="profile-email" className="label-text">
             Email đăng ký
           </label>
-          <input
-            id="profile-email"
-            type="email"
-            className="input"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            disabled
-          />
+          <input id="profile-email" type="email" className="input" value={email} disabled />
         </div>
 
         <div>
@@ -152,7 +141,7 @@ export default function Profile() {
         {statusMessage ? <p className="form-success">{statusMessage}</p> : null}
         {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
-        <button type="submit" className="btn-primary" disabled={saving}>
+        <button type="submit" className="btn-primary" disabled={!canSubmit}>
           {saving ? "Đang lưu..." : "Lưu thay đổi"}
         </button>
       </form>

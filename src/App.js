@@ -14,6 +14,7 @@ import Product from "./pages/Product";
 import ProductDetail from "./pages/ProductDetail";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
+import RouteScrollTop from "./components/RouteScrollTop";
 
 function RequireAuth({ children }) {
   const { isAuthenticated } = useAppContext();
@@ -42,6 +43,7 @@ function RequireAdmin({ children }) {
 function App() {
   return (
     <BrowserRouter>
+      <RouteScrollTop />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route
